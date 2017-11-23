@@ -1,0 +1,21 @@
+@layout("/common/_curd/_container.html"){
+
+	<form data-url="${basePath}/${code}/save" method="post" class="form-horizontal" role="form">
+		<!-- 表单 -->
+		@ var _table="dg_orde_progress";
+		@ var _col=[
+		@			  {name:"创建人ID", index:"create_id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"订单ID", index:"order_id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"经度坐标", index:"longitude", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"纬度坐标", index:"latitude", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"状态", index:"status", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"进度提交时间", index:"create_time", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"备注", index:"mark", type:"text",newline:true,length:8,required:"required"}
+		@		   ];
+		@ include("/common/_curd/_add.html", {"col":_col, "table":_table}){}
+		
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html", {btn_save:"新增", btn_close:"关闭"}) {}
+	</form>
+
+@}

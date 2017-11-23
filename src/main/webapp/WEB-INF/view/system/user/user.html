@@ -1,0 +1,72 @@
+@layout("/common/_curd/_container.html"){
+<script type="text/javascript">
+	var ctx="${basePath}";
+	var grid_selector = "#grid-table";
+	var pager_selector = "#grid-pager";
+	var export_source = "User.oraclelist";
+	if("${func.isMySql()}" == "true"){
+		export_source = "User.mysqllist";
+	}
+	
+	$(function(){
+		initGrid();
+		initMenuBtn("btns","${code}");
+	});
+	
+	function initGrid(){
+		var grid_url = ctx+"/${code}/list";//查询列表接口
+		var _colnames=[ "序列","账户", "姓名","性别","角色ID","角色", "邮箱","电话","创建时间","状态"];
+		var _colmodel=[   {name:"ID",index:"ID", width:80,hidden:true},
+						  {name:"ACCOUNT",index:"ACCOUNT", width:80},
+						  {name:"NAME",index:"NAME", width:80},
+						  {name:"SEXNAME",index:"SEX", width:50},
+						  {name:"ROLEID",index:"ROLEID", width:50,hidden:true},
+						  {name:"ROLENAME",index:"ROLEID", width:150},
+						  {name:"EMAIL",index:"EMAIL", width:120},
+						  {name:"PHONE",index:"PHONE", width:100},
+						  {name:"CREATETIME",index:"CREATETIME", width:100},
+						  {name:"STATUSNAME",index:"STATUS", width:50}
+						];
+		
+		jQuery(grid_selector).jqGrid({
+			url:grid_url,
+			//caption: "用户管理",
+		    shrinkToFit:true,//适用于较少字段,响应式
+			colNames:_colnames,
+			colModel:_colmodel, 
+			jsonReader:{id:"ID"},
+			pager : pager_selector,
+			postData: { sort: "status asc, account", order: "asc"}
+		});
+		
+
+	}
+		
+</script>
+
+
+	<!-- 配置grid -->
+	<div class="row"><!-- col-xs-9 tb-grid -->
+		<div class="col-xs-12 tb-grid">
+			<!-- 配置查询 -->
+			@ var _col=[
+			@		  	{name:"账户",index:"ACCOUNT",type:"text"},
+			@		  	{name:"姓名",index:"NAME",type:"text"},
+			@		  	{name:"性别",index:"SEX",type:"select_101"},
+			@		 	{name:"邮箱",index:"EMAIL",type:"text"},
+			@		  	{name:"电话",index:"PHONE",type:"text"},
+			@			{name:"状态",index:"STATUS",type:"select_901"}
+			@		   ];
+			@ include("/common/_function/_search.html",{"col":_col}){}
+			<!-- 按钮组 -->
+			<div class="welljq well-sm" id="btns"></div>
+			<!-- grid -->
+			<table id="grid-table"></table>
+			<!-- 分页 -->
+			<div id="grid-pager"></div>
+		</div>
+	</div>
+	
+	<!-- 引入列表页所需js -->
+	@include("/common/_listscript.html"){}
+@}	

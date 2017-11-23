@@ -1,0 +1,51 @@
+@layout("/common/_curd/_container.html"){
+	<!-- PAGE CONTENT BEGINS -->
+	<form class="form-horizontal" role="form">
+		<div class="space-4"></div>
+		<!-- #section:elements.form -->
+		<div class="form-group">
+			<input type="hidden" name="TFW_model.ID" value="${model.id!}"/>
+			<label class="col-sm-2 control-label no-padding-right"> 工种名称 </label>
+
+			<div class="col-sm-3">
+				<input type="text" disabled value="${model.name!}" placeholder="暂无工种名称" class="form-control" />
+			</div>
+			
+			<label class="col-sm-2 control-label no-padding-right"> 是否需要认证 </label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${model.checkFlag!}" placeholder="暂无认证标记" class="form-control" />
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-2 control-label no-padding-right">每日酬劳</label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${model.salary!}" placeholder="暂无每日酬劳" class="form-control" />
+			</div>
+			
+			<label class="col-sm-2 control-label no-padding-right" > 加班金额 </label>
+
+			<div class="col-sm-3">
+				<input type="text" disabled value="${model.over_money!}" placeholder="暂无加班金额" class="form-control" />
+			</div>
+		</div>
+		
+		<div class="form-group">
+			
+			<label class="col-sm-2 control-label no-padding-right" > 接单标记 </label>
+
+			<div class="col-sm-3">
+				<input type="text" disabled value="${model.orderFlag!}" placeholder="暂无发单标记" class="form-control" />
+			</div>
+			
+			<label class="col-sm-2 control-label no-padding-right">描述</label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${model.mark!}" placeholder="暂无描述" class="form-control" />
+			</div>
+		</div>
+		
+		<div class="space-4"></div>
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html",{btn_close:"关闭"}) {}
+</form>
+@}

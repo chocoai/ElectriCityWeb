@@ -1,0 +1,26 @@
+@layout("/common/_curd/_container.html"){
+
+	<form data-url="${basePath}/${code}/update" method="post" class="form-horizontal" role="form">
+		<!-- 表单 -->
+		@ var _table="dg_worktype_check";
+		@ var _key="id";
+		@ var _col=[
+@			  {name:"", index:"id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"电工用户id", index:"dg_user_id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"工种类型id", index:"work_id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"审核状态", index:"status", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"审核管理员id", index:"admin_id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"身份证正面URL", index:"id_up_url", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"身份证反面URL", index:"id_down_url", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"工种证件URL", index:"work_doc_url", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"审核失败说明", index:"mark", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"创建时间", index:"create_tm", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"版本记录号", index:"version", type:"text",newline:true,length:8,required:"required"}		
+		@		   ];
+		@ include("/common/_curd/_edit.html", {"col":_col, "table":_table, "key":_key}){}
+		
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html", {btn_save:"修改", btn_close:"关闭"}) {}
+	</form>
+
+@}

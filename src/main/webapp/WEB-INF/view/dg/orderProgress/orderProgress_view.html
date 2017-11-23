@@ -1,0 +1,20 @@
+@layout("/common/_curd/_container.html"){
+
+	<form class="form-horizontal" role="form">
+		<!-- 表单 -->
+		@ var _col=[
+		@			  {name:"创建人ID", index:"create_id", type:"text",newline:true,length:8},
+		@			  {name:"订单id", index:"order_id", type:"text",newline:true,length:8},
+		@			  {name:"经度坐标", index:"longitude", type:"text",newline:true,length:8},
+		@			  {name:"纬度坐标", index:"latitude", type:"text",newline:true,length:8},
+		@			  {name:"状态", index:"status", type:"text",newline:true,length:8},
+		@			  {name:"进度提交时间", index:"create_time", type:"text",newline:true,length:8},
+		@			  {name:"备注", index:"mark", type:"text",newline:true,length:8}
+		@		   ];
+		@ include("/common/_curd/_view.html", {"col":_col}){}
+		
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html", {btn_close:"关闭"}) {}
+	</form>
+
+@}

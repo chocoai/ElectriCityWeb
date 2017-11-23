@@ -1,0 +1,84 @@
+@layout("/common/_curd/_container.html"){
+
+<script type="text/javascript">
+	var ctx = "${basePath}";
+	var grid_selector = "#grid-table";
+	var pager_selector = "#grid-pager";
+	
+	$(function(){
+		initGrid();
+		initMenuBtn("btns", "${code}");
+	});
+	
+	function initGrid(){
+		var grid_url = ctx + "/${code}/list";
+		var _colnames = ["自动增长Id", 
+						"用户名", 
+						"注册id", 
+						"注册密码", 
+						"加密盐", 
+						"", 
+						"用户状态，1冻结，0正常", 
+						"根据当前创建用户的等级来判断，1级可创建2,3级，2级只能创建3级", 
+						"修改用户", 
+						"修改时间", 
+						"管理员标记", 
+						"版本记录号"];
+		var _colmodel = [{name:"id", index:"id", width:100},
+						{name:"name", index:"name", width:100},
+						{name:"register_code", index:"register_code", width:100},
+						{name:"register_pass", index:"register_pass", width:100},
+						{name:"salt", index:"salt", width:100},
+						{name:"register_time", index:"register_time", width:100},
+						{name:"status", index:"status", width:100},
+						{name:"level", index:"level", width:100},
+						{name:"modify_user", index:"modify_user", width:100},
+						{name:"modify_time", index:"modify_time", width:100},
+						{name:"admin_flag", index:"admin_flag", width:100},
+						{name:"version", index:"version", width:100}];
+		
+		jQuery(grid_selector).jqGrid({
+			url : grid_url,
+		    shrinkToFit : true,
+			colNames : _colnames,
+			colModel : _colmodel, 
+			jsonReader : {id :"id"},
+			pager : pager_selector,
+			postData : {sort : "id", order : "desc"}
+		});
+	}
+</script>
+
+
+	<!-- 配置 grid -->
+	<div class="row">
+		<div class="col-xs-12 tb-grid">
+			<!-- 配置 查询 -->
+			@ var _col=[
+@		{name:"自动增长Id", index:"id", type:"text"},
+			@		{name:"用户名", index:"name", type:"text"},
+			@		{name:"注册id", index:"register_code", type:"text"},
+			@		{name:"注册密码", index:"register_pass", type:"text"},
+			@		{name:"加密盐", index:"salt", type:"text"},
+			@		{name:"", index:"register_time", type:"text"},
+			@		{name:"用户状态，1冻结，0正常", index:"status", type:"text"},
+			@		{name:"根据当前创建用户的等级来判断，1级可创建2,3级，2级只能创建3级", index:"level", type:"text"},
+			@		{name:"修改用户", index:"modify_user", type:"text"},
+			@		{name:"修改时间", index:"modify_time", type:"text"},
+			@		{name:"管理员标记", index:"admin_flag", type:"text"},
+			@		{name:"版本记录号", index:"version", type:"text"}							
+			@];
+			@ include("/common/_function/_search.html",{"col":_col}){}
+			<!-- 按钮 -->
+			<div class="welljq well-sm" id="btns"></div>
+			<!-- grid -->
+			<table id="grid-table"></table>
+			<!-- 分页-->
+			<div id="grid-pager"></div>
+		</div>
+	</div>
+	
+	<!-- 引入所需的js -->
+	@include("/common/_listscript.html"){}
+	
+@}	

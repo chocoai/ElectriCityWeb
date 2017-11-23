@@ -1,0 +1,55 @@
+@layout("/common/_container.html"){
+<!-- <link rel="stylesheet" href="${basePath}/static/assets/css/news/default.css" /> -->
+<link rel="stylesheet" href="${basePath}/static/assets/css/news/normalize.css" />
+<link rel="stylesheet" href="${basePath}/static/assets/css/news/site.css" />
+
+<div class="row" style="padding: 10px 16px 10px 16px;">
+	<div class="col-md-16">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<span class="glyphicon glyphicon-list-alt"></span><b>消息</b>
+			</div>
+			<div class="panel-body" style="height:700px;">
+				<div class="row">
+					<div class="col-xs-12">
+						<ul class="messagePanel">
+						@for(x in messages){
+							<li class="news-item">
+								<table cellpadding="4">
+									<tbody>
+										<tr>
+											<td><img src="images/1.png" width="60"
+												class="img-circle"></td>
+											<td>${x.content!}<a href="#"> ${x.create_time!}</a>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</li>
+						@}
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+@}
+<script src="${basePath}/static/jquery/bootstrap.newsbox.min.js"></script>
+<!-- <script type="text/javascript">
+	var reqUrl = "${basePath}"+ "/${messageCode}/all";
+	$(function() {
+		$(".messagePanel").bootstrapNews({
+			newsPerPage : 10,
+			autoplay : true,
+			pauseOnHover : true,
+			direction : 'down',
+			newsTickerInterval : 5000,
+			onToDo : function() {
+				setInterval(function(){
+					$(".messagePanel").load(reqUrl)
+				}, 5000);
+			}
+		});
+	});
+</script> -->

@@ -1,0 +1,64 @@
+@layout("/common/_curd/_container.html"){
+
+<script type="text/javascript">
+	var ctx = "${basePath}";
+	var grid_selector = "#grid-table";
+	var pager_selector = "#grid-pager";
+	
+	$(function(){
+		initGrid();
+		initMenuBtn("btns", "${code}");
+	});
+	
+	function initGrid(){
+		var grid_url = ctx + "/${code}/list";
+		var _colnames = ["昵称", 
+						"手机号", 
+						"注册时间", 
+						"性别",
+						"用户状态", 
+						"备注"];
+		var _colmodel = [{name:"name", index:"name", width:100},
+						{name:"phoneno", index:"phoneno", width:100},
+						{name:"register_time", index:"register_time", width:100},
+						{name:"genderName", index:"gender", width:50},
+						{name:"statusName", index:"status", width:50},
+						{name:"mark", index:"mark", width:100}];
+		
+		jQuery(grid_selector).jqGrid({
+			url : grid_url,
+		    shrinkToFit : true,
+			colNames : _colnames,
+			colModel : _colmodel, 
+			jsonReader : {id :"id"},
+			pager : pager_selector,
+			postData : {sort : "id", order : "desc"}
+		});
+	}
+</script>
+
+
+	<!-- 配置 grid -->
+	<div class="row">
+		<div class="col-xs-12 tb-grid">
+			<!-- 配置 查询 -->
+			@ var _col=[
+			@		{name:"昵称", index:"name", type:"text"},
+			@		{name:"手机号", index:"phoneno", type:"text"},
+			@		{name:"注册时间", index:"register_time", type:"text"},
+			@		{name:"用户状态", index:"status", type:"select_208"},
+			@		{name:"性别", index:"gender", type:"select_101"},
+			@		{name:"备注", index:"mark", type:"text"}						
+			@];
+			@ include("/common/_function/_search.html",{"col":_col}){}
+			<!-- 按钮 -->
+			<div class="welljq well-sm" id="btns"></div>
+			<!-- grid -->
+			<table id="grid-table"></table>
+			<!-- 分页-->
+			<div id="grid-pager"></div>
+		</div>
+	</div>	
+	<!-- 引入所需的js -->
+	@include("/common/_listscript.html"){}	
+@}	

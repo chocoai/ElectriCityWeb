@@ -1,0 +1,18 @@
+@layout("/common/_curd/_container.html"){
+
+	<form class="form-horizontal" role="form">
+		<!-- 表单 -->
+		@ var _col=[
+		@			  {name:"ID", index:"id", type:"text",newline:true,length:4},
+		@			  {name:"电工", index:"dgUser", type:"text",newline:false,length:4},
+		@			  {name:"工种", index:"workTypeName", type:"text",newline:true,length:4},
+		@			  {name:"审核状态", index:"statusName", type:"text",newline:false,length:4},
+		@			  {name:"创建时间", index:"create_time", type:"text",newline:true,length:4}	
+		@		   ];
+		@ include("/common/_curd/_view.html", {"col":_col}){}
+		
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html", {btn_close:"关闭"}) {}
+	</form>
+
+@}

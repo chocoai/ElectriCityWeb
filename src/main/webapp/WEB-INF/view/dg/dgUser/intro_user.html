@@ -1,0 +1,100 @@
+@layout("/common/_curd/_container.html"){
+	<!-- PAGE CONTENT BEGINS -->
+	<form class="form-horizontal" role="form">
+		<div class="space-4"></div>
+		<!-- #section:elements.form -->
+		<div class="form-group">
+			<input type="hidden" value="${user.id!}"/>
+			<label class="col-sm-2 control-label no-padding-right" > 昵称 </label>
+
+			<div class="col-sm-3">
+				<input type="text" disabled value="${user.name!}" placeholder="暂无昵称" class="form-control" />
+			</div>
+			
+			<label class="col-sm-2 control-label no-padding-right" > 手机号 </label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${user.phoneno!}" placeholder="暂无手机号" class="form-control" />
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-2 control-label no-padding-right" > 性别 </label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${user.genderName!}" placeholder="暂无性别" class="form-control" />
+			</div>
+			
+			<label class="col-sm-2 control-label no-padding-right" > 头像 </label>
+
+			<div class="col-sm-3">
+				<input type="text" disabled value="${user.head_url!}" placeholder="暂无头像" class="form-control" />
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-2 control-label no-padding-right" > 注册时间</label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${user.register_time!}" placeholder="暂无注册时间" class="form-control" />
+			</div>
+			
+			<label class="col-sm-2 control-label no-padding-right" > 奖励次数 </label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${user.inro_count!}" placeholder="暂无奖励次数" class="form-control" />
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-2 control-label no-padding-right" > 电工状态 </label>
+
+			<div class="col-sm-3">
+				<input type="text" disabled value="${user.statusName!}" placeholder="暂无电工状态" class="form-control" />
+			</div>
+			
+			<label class="col-sm-2 control-label no-padding-right" > 推荐人 </label>
+			<div class="col-sm-3">
+				<a href="${basePath}/dgUser/introView/${user.intro_id!}" class="form-control">${user.introName!}</a>
+			</div>
+		</div>
+		
+		<div class="form-group">
+			<label class="col-sm-2 control-label no-padding-right" > 身份信息 </label>
+
+			<div class="col-sm-3">
+				<input type="text" disabled value="${user.code!}" placeholder="暂无身份信息" class="form-control" />
+			</div>
+			
+			<label class="col-sm-2 control-label no-padding-right" > 账户余额 </label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${user.balance!}" placeholder="暂无账户余额" class="form-control" />
+			</div>
+		</div>
+		
+		<div class="form-group">
+			<label class="col-sm-2 control-label no-padding-right" > 点评总人数 </label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${user.customs!}" placeholder="暂无点评总人数" class="form-control" />
+			</div>
+			
+			<label class="col-sm-2 control-label no-padding-right" > 点评总分数 </label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${user.total!}" placeholder="暂无点评总分数" class="form-control" />
+			</div>
+		</div>
+		
+		<div class="form-group">
+			<label class="col-sm-2 control-label no-padding-right" > 居住地址 </label>
+			<div class="col-sm-8">
+				<input type="text" disabled value="${user.address!}" placeholder="暂无居住地址" class="form-control" />
+			</div>
+		</div>
+		
+		<div class="form-group">
+			<label class="col-sm-2 control-label no-padding-right" > 备注 </label>
+			<div class="col-sm-8">
+				<input type="text" disabled value="${user.mark!}" placeholder="备注" class="form-control" />
+			</div>
+		</div>
+		<div class="space-4"></div>
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html",{btn_close:"关闭"}) {}
+</form>
+@}

@@ -1,0 +1,22 @@
+@layout("/common/_curd/_container.html"){
+
+	<form data-url="${basePath}/${code}/update" method="post" class="form-horizontal" role="form">
+		<!-- 表单 -->
+		@ var _table="dg_message";
+		@ var _key="id";
+		@ var _col=[
+		@			  {name:"电工ID", index:"dg_id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"系统管理员ID", index:"dg_id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"消息状态", index:"status", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"消息类型", index:"type", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"创建时间", index:"create_time", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"阅读时间", index:"read_time", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"消息内容", index:"content", type:"text",newline:true,length:8,required:"required"}
+		@		   ];
+		@ include("/common/_curd/_edit.html", {"col":_col, "table":_table, "key":_key}){}
+		
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html", {btn_save:"修改", btn_close:"关闭"}) {}
+	</form>
+
+@}

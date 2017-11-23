@@ -1,0 +1,132 @@
+@layout("/common/_curd/_container.html"){
+
+<script type="text/javascript">
+	var ctx = "${basePath}";
+	var grid_selector = "#grid-table";
+	var pager_selector = "#grid-pager";
+	
+	var grid_selector2 = "#grid-table-2";
+	var pager_selector2 = "#grid-pager-2";
+	
+	$(function(){
+		initGrid();
+		initGrid2();
+		initMenuBtn("btns", "${code}");
+		initMenuBtn("btns2", "${workOrderCode}");
+		
+		setTimeout(function(){		
+			$("#btns2").find("button[id^='dgOrder']").each(function() {
+			    $(this).unbind('click');
+			});
+			$("#btns2").find("button[id^='dgOrder']").remove();
+			
+			$('.col-xs-4').css({'width': '100%'}); 
+		},20);
+		
+	});
+	
+	function initGrid(){
+		var grid_url = ctx + "/${code}/list";
+		var _colnames = ["电工用户", 
+						"订单标题", 
+						"总额(￥)",
+						"创建时间"];
+		var _colmodel = [{name:"dgUser", index:"dgUser", width:100},
+						{name:"title", index:"title", width:100},
+						{name:"total_money", index:"total_money", width:100},
+						{name:"createtm", index:"createtm", width:100}];//createtm
+		
+		jQuery(grid_selector).jqGrid({
+			url : grid_url,
+			rownumbers : false,
+		    shrinkToFit : true,
+			colNames : _colnames,
+			colModel : _colmodel, 
+			jsonReader : {id :"id"},
+			pager : pager_selector,
+			postData : {sort : "id", order : "desc"},
+			beforeSelectRow: function (rowid, e) {
+				var condition = encodeURI('{"order_id_equal":"'+rowid+'"}');
+				var curl = ctx + "/${workOrderCode}/workorderList?where="+condition;
+	            $('#grid-table-2').jqGrid('setGridParam',{url:curl,page:1});
+	            $('#grid-table-2').trigger('reloadGrid');
+	            return true;
+	        }
+		});
+	}
+	
+	function initGrid2(){
+		var _colnames2 = ["电工用户", 
+						"周期(天)", 
+						"工种", 
+						"金额(￥)",
+						"总额(￥)",
+						"项目状态", 
+						"接单人", 
+						"创建时间", 
+						"接收时间", 
+						"完成时间", 
+						"补贴金额(￥)", 
+						"补贴说明"];
+		var _colmodel2 = [{name:"dgUser", index:"dgUser", width:100},
+						{name:"orderDays", index:"orderDays", width:100},
+						{name:"workTypeName", index:"workTypeName", width:100},
+						{name:"money", index:"money", width:100},
+						{name:"total_money", index:"total_money", width:100},
+						{name:"statusName", index:"statusName", width:100},
+						{name:"acceptUser", index:"acceptUser", width:100},
+						{name:"create_time", index:"create_time", width:100},
+						{name:"accpet_time", index:"accpet_time", width:100},
+						{name:"finish_time", index:"finish_time", width:100},
+						{name:"subsidy", index:"subsidy", width:100},
+						{name:"subsidy_mark", index:"subsidy_mark", width:100}];
+		
+		jQuery(grid_selector2).jqGrid({
+		    shrinkToFit : true,
+		    rownumbers : false,
+			colNames : _colnames2,
+			colModel : _colmodel2, 
+			jsonReader : {id :"id"},
+			pager : pager_selector2,
+			postData : {sort : "id", order : "desc"}
+		});
+	}
+</script>
+
+
+	<!-- 配置 grid -->
+	<div class="row">
+		<div class="col-xs-6 col-md-4 tb-grid">
+			<!-- 配置 查询 -->
+			@ var _col=[
+			@		{name:"订单标题", index:"title", type:"text"}				
+			@];
+			@ include("/common/_function/_search.html",{"col":_col}){}
+			<!-- 按钮 -->
+			<div class="welljq well-sm" id="btns"></div>
+			<!-- grid -->
+			<table id="grid-table"></table>
+			<!-- 分页-->
+			<div id="grid-pager"></div>
+		</div>
+		
+		<div class="col-xs-12 col-md-8 tb-grid">
+			<!-- 配置 查询 -->
+			@ var _col2=[
+			@		{name:"发单人", index:"dgUser", type:"text"},
+			@		{name:"接单人", index:"acceptUser", type:"text"}				
+			@];
+			@ include("/common/_function/_search2.html",{"col":_col2}){}
+			<!-- 按钮 -->
+			<div class="welljq well-sm" id="btns2"></div>
+			<!-- grid -->
+			<table id="grid-table-2"></table>
+			<!-- 分页-->
+			<div id="grid-pager-2"></div>
+		</div>
+	</div>
+	
+	<!-- 引入所需的js -->
+	@include("/common/_listscript.html"){}
+	
+@}

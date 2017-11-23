@@ -1,0 +1,28 @@
+@layout("/common/_curd/_container.html"){
+
+	<form data-url="${basePath}/${code}/save" method="post" class="form-horizontal" role="form">
+		<!-- 表单 -->
+		@ var _table="dg_user";
+		@ var _col=[
+		@			  {name:"昵称", index:"name", type:"text",newline:true,length:4,required:"required"},
+		@			  {name:"手机号", index:"phoneno", type:"text",newline:false,length:4,required:"required"},	
+		@			  {name:"性别", index:"gender", "type":"select_101",newline:true,length:4,required:"required"},		
+		@			  {name:"头像地址", index:"head_url", type:"text",newline:false,length:4,required:"required"},
+		@			  {name:"居住地址", index:"address", type:"text",newline:true,length:4,required:"required"},
+		@			  {name:"注册时间", index:"register_time", type:"laydate",value:func.getTime(),newline:false,length:4,required:"required",disabled:"disabled"},		
+		@			  {name:"状态", index:"status", type:"select_208",newline:true,length:4,required:"required"},
+		@			  {name:"推荐人id", index:"intro_id", type:"text",newline:false,length:4},
+		@			  {name:"身份信息", index:"code", type:"text",newline:true,length:4},
+		@			  {name:"账户余额", index:"balance", type:"text",newline:false,length:4},
+		@			  {name:"点评总人数", index:"customs", type:"text",newline:true,length:4},
+		@			  {name:"奖励次数", index:"inro_count", type:"text",newline:false,length:4},
+		@			  {name:"点评总分数", index:"total", type:"text",newline:true,length:4},
+		@			  {name:"备注", index:"mark", type:"text",newline:false,length:4}	
+		@		   ];
+		@ include("/common/_curd/_add.html", {"col":_col, "table":_table}){}
+		
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html", {btn_save:"新增", btn_close:"关闭"}) {}
+	</form>
+
+@}

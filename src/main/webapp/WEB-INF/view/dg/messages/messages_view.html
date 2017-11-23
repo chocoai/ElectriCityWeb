@@ -1,0 +1,20 @@
+@layout("/common/_curd/_container.html"){
+
+	<form class="form-horizontal" role="form">
+		<!-- 表单 -->
+		@ var _col=[
+		@			  {name:"电工ID", index:"dg_id", type:"text",newline:true,length:8},
+		@			  {name:"系统管理员ID", index:"dg_id", type:"text",newline:true,length:8},
+		@			  {name:"消息状态", index:"status", type:"text",newline:true,length:8},
+		@			  {name:"消息类型", index:"type", type:"text",newline:true,length:8},
+		@			  {name:"创建时间", index:"create_time", type:"text",newline:true,length:8},
+		@			  {name:"阅读时间", index:"read_time", type:"text",newline:true,length:8},
+		@			  {name:"消息内容", index:"content", type:"text",newline:true,length:8}
+		@		   ];
+		@ include("/common/_curd/_view.html", {"col":_col}){}
+		
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html", {btn_close:"关闭"}) {}
+	</form>
+
+@}

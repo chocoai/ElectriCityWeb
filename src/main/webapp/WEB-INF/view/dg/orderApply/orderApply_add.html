@@ -1,0 +1,20 @@
+@layout("/common/_curd/_container.html"){
+
+	<form data-url="${basePath}/${code}/save" method="post" class="form-horizontal" role="form">
+		<!-- 表单 -->
+		@ var _table="dg_order_apply";
+		@ var _col=[
+		@			  {name:"电工用户ID", index:"create_id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"工种订单ID", index:"work_order_id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"申请类型", index:"type", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"状态", index:"status", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"招标说明", index:"mark", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"创建时间", index:"create_time", type:"text",newline:true,length:8,required:"required"}	
+		@		   ];
+		@ include("/common/_curd/_add.html", {"col":_col, "table":_table}){}
+		
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html", {btn_save:"新增", btn_close:"关闭"}) {}
+	</form>
+
+@}
