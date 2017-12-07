@@ -1,0 +1,20 @@
+package com.ikkong.common.utils;
+
+import java.util.Date;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+
+public class SmokeWantTest {
+
+	public static void main(String[] args) {
+		String phoneNo = "13888888888";
+		Long timeMills = new Date().getTime();
+		String[] array = {"Gcs9&3","Sn#6xQ","$Y0t9x","pW%G9r"};
+		String[] newArray = ArrayUtils.insert(1, array, phoneNo);
+		String[] digestArray = ArrayUtils.insert(3, newArray, String.valueOf(timeMills));
+		String md5 = DigestUtils.md5Hex(StringUtils.join(digestArray, "@"));
+		System.out.println(md5);
+	}
+
+}

@@ -1,0 +1,90 @@
+@layout("/common/_curd/_container.html"){
+
+<script type="text/javascript">
+	var ctx = "${basePath}";
+	var grid_selector = "#grid-table";
+	var pager_selector = "#grid-pager";
+	
+	$(function(){
+		initGrid();
+		initMenuBtn("btns", "${code}");
+	});
+	
+	function initGrid(){
+		var grid_url = ctx + "/${code}/list";
+		var _colnames = ["", 
+						"电工用户id", 
+						"订单id", 
+						"订单周期", 
+						"工种类型id", 
+						"项目描述", 
+						"项目金额", 
+						"项目状态", 
+						"接单人id", 
+						"订单创建时间", 
+						"订单接收时间", 
+						"完成时间", 
+						"补贴金额", 
+						"补贴说明"];
+		var _colmodel = [{name:"id", index:"id", width:100},
+						{name:"create_id", index:"create_id", width:100},
+						{name:"order_id", index:"order_id", width:100},
+						{name:"order_date", index:"order_date", width:100},
+						{name:"worktype_id", index:"worktype_id", width:100},
+						{name:"mark", index:"mark", width:100},
+						{name:"money", index:"money", width:100},
+						{name:"status", index:"status", width:100},
+						{name:"accpet_user", index:"accpet_user", width:100},
+						{name:"create_time", index:"create_time", width:100},
+						{name:"accpet_time", index:"accpet_time", width:100},
+						{name:"finish_time", index:"finish_time", width:100},
+						{name:"subsidy", index:"subsidy", width:100},
+						{name:"subsidy_mark", index:"subsidy_mark", width:100}];
+		
+		jQuery(grid_selector).jqGrid({
+			url : grid_url,
+		    shrinkToFit : true,
+			colNames : _colnames,
+			colModel : _colmodel, 
+			jsonReader : {id :"id"},
+			pager : pager_selector,
+			postData : {sort : "id", order : "desc"}
+		});
+	}
+</script>
+
+
+	<!-- 配置 grid -->
+	<div class="row">
+		<div class="col-xs-12 tb-grid">
+			<!-- 配置 查询 -->
+			@ var _col=[
+@		{name:"", index:"id", type:"text"},
+			@		{name:"电工用户id", index:"create_id", type:"text"},
+			@		{name:"订单id", index:"order_id", type:"text"},
+			@		{name:"订单周期", index:"order_date", type:"text"},
+			@		{name:"工种类型id", index:"worktype_id", type:"text"},
+			@		{name:"项目描述", index:"mark", type:"text"},
+			@		{name:"项目金额", index:"money", type:"text"},
+			@		{name:"项目状态", index:"status", type:"text"},
+			@		{name:"接单人id", index:"accpet_user", type:"text"},
+			@		{name:"订单创建时间", index:"create_time", type:"text"},
+			@		{name:"订单接收时间", index:"accpet_time", type:"text"},
+			@		{name:"完成时间", index:"finish_time", type:"text"},
+			@		{name:"补贴金额", index:"subsidy", type:"text"},
+			@		{name:"补贴说明", index:"subsidy_mark", type:"text"}						
+			@];
+			@ include("/common/_function/_search.html",{"col":_col}){}
+			<!-- 按钮 -->
+			<div class="welljq well-sm" id="btns"></div>
+			<!-- grid -->
+			<table id="grid-table"></table>
+			<!-- 分页-->
+			<div id="grid-pager"></div>
+		</div>
+	</div>
+	
+	<!-- 引入所需的js -->
+	@include("/common/_listscript.html"){}
+	
+@}	

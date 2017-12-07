@@ -1,0 +1,48 @@
+@layout("/common/_curd/_container.html"){
+
+<script type="text/javascript">
+	var ctx = "${basePath}";
+	var grid_selector = "#grid-table";
+	var pager_selector = "#grid-pager";
+	
+	$(function(){
+		initGrid();
+	});
+	
+	function initGrid(){
+		var grid_url = ctx + "/${code}/userworkList?where=%7B%22dg_userid%22:%22${dgId}%22%7D";
+		
+		var _colnames = ["电工", 
+						"工种类型", 
+						"审核状态", 
+						"创建时间"];
+		var _colmodel = [{name:"dgUser", index:"dgUser", width:100},
+						{name:"workTypeName", index:"workTypeName", width:100},
+						{name:"statusName", index:"statusName", width:100},
+						{name:"create_time", index:"create_time", width:100}];
+		
+		jQuery(grid_selector).jqGrid({
+			url : grid_url,
+		    shrinkToFit : true,
+			colNames : _colnames,
+			colModel : _colmodel, 
+			jsonReader : {id :"id"},
+			pager : pager_selector,
+			postData : {sort : "id", order : "desc"}
+		});
+	}
+</script>
+
+	<!-- 配置 grid -->
+	<div class="row">
+		<div class="col-xs-12 tb-grid">			
+			<!-- grid -->
+			<table id="grid-table"></table>
+			<!-- 分页-->
+			<div id="grid-pager"></div>
+		</div>
+	</div>
+	
+	<!-- 引入所需的js -->
+	@include("/common/_listscript.html"){}	
+@}	

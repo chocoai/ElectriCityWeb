@@ -1,0 +1,91 @@
+package com.ikkong.common.jobs;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+
+import com.ikkong.common.constant.CommonConts.AgingTypeCode;
+import com.ikkong.common.constant.CommonConts.ApplyStatus;
+import com.ikkong.common.constant.CommonConts.ApplyType;
+import com.ikkong.common.constant.CommonConts.MsgTempCode;
+import com.ikkong.common.constant.CommonConts.MsgType;
+import com.ikkong.common.utils.AgingTypeUtil;
+import com.ikkong.core.constant.ConstCache;
+import com.ikkong.core.dao.Blade;
+import com.ikkong.core.toolbox.Record;
+import com.ikkong.dg.model.OrderApply;
+import com.ikkong.dg.model.WorkOrder;
+import com.ikkong.dg.service.MessagesService;
+import com.ikkong.dg.service.impl.MessagesServiceImpl;
+import com.ikkong.system.model.Parameter;
+import com.jfinal.kit.LogKit;
+import com.jfinal.plugin.ehcache.CacheKit;
+import com.jfinal.plugin.ehcache.IDataLoader;
+
+/**
+ *203>>> 申请记录定时变更状态>>12>>2
+ * 默认将status修改为同意
+ * 
+ * @author sparker
+ *
+ */
+public class AutoApplyAgress implements Job {
+	
+	private Blade blade = Blade.create(OrderApply.class);
+	private Blade workOrderBlade = Blade.create(WorkOrder.class);
+	private MessagesService msgServ = new MessagesServiceImpl();
+	private static final String desc = "系统默认为同意";
+
+	@Override
+	public void execute(JobExecutionContext context) throws JobExecutionException {
+		String code = AgingTypeCode.AGE_203.getCodeVal();
+		Parameter parameter = CacheKit.get(ConstCache.DEFAULT_CACHE, "getParamter_" + code, new IDataLoader() {
+			@Override
+			public Object load() {
+				return Blade.create(Parameter.class).findFirstBy("CODE=#{code}", Record.create().set("code", code));
+			}
+		});
+		
+		if(parameter == null) {
+			LogKit.info("招标申请自动同意参数未配置!");
+			return;
+		}
+		
+		String condition = AgingTypeUtil.dateCondition(parameter.getAgingtype(), parameter.getPara());
+//		String[] types = {String.valueOf(ApplyType.APPLY.getTypeVal()), String.valueOf(ApplyType.ABORT.getTypeVal()), String.valueOf(ApplyType.OVERTIME.getTypeVal())};
+		
+		StringBuffer sqlBuf = new StringBuffer();
+		sqlBuf.append("where status = #{status} and date_add(create_time, "+condition+") < now() ");
+		sqlBuf.append(" and type = #{applyType} ");//in (#{join(types)})
+		
+		Record para = Record.create().set("status", ApplyStatus.APPLYING.getStatusVal());		
+		para.set("applyType", ApplyType.APPLY.getTypeVal());
+		List<OrderApply> applyList = blade.findBy(sqlBuf.toString(), para);
+		if(applyList != null && !applyList.isEmpty()) {
+			List<Long> userIds = new ArrayList<Long>();
+			List<WorkOrder> woList =new ArrayList<WorkOrder>();
+			for(OrderApply apply: applyList) {
+				apply.setVersion(apply.getVersion()+1);
+				apply.setStatus(ApplyStatus.AGREE.getStatusVal());
+				apply.setAudit_desc(desc);
+				WorkOrder wo = workOrderBlade.findById(apply.getWork_order_id());
+				userIds.add(apply.getCreate_id());
+				wo.setAccept_user_id(apply.getCreate_id());
+				wo.setAccpet_time(new Date());
+				woList.add(wo);
+			}
+			try {
+				blade.updateBathById(applyList);
+				workOrderBlade.updateBathById(woList);				
+				msgServ.addMsgByUserList(userIds, MsgType.EVENT_MSG.getStatusVal(), MsgTempCode.TMP_1036.getTmpVal());
+			} catch (Exception e) {
+				e.printStackTrace();
+				LogKit.error("申请记录定时变更[同意]状态异常!", e);
+			}
+		}		
+	}
+}

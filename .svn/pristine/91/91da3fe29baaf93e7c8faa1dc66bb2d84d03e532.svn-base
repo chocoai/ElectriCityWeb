@@ -1,0 +1,116 @@
+@layout("/common/_curd/_container.html"){
+	<!-- PAGE CONTENT BEGINS -->
+	<form class="form-horizontal" role="form">
+		<div class="space-4"></div>
+		<!-- #section:elements.form -->
+		<div class="form-group">
+			<input type="hidden" value="${model.id!}"/>
+			<label class="col-sm-1 control-label no-padding-right" >电工用户</label>
+
+			<div class="col-sm-3">
+				<input type="text" disabled value="${model.userName!}" placeholder="暂无电工用户" class="form-control" />
+			</div>
+			
+			<label class="col-sm-1 control-label no-padding-right" >工种类型</label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${model.workTypeName!}" placeholder="暂无工种类型" class="form-control" />
+			</div>
+			
+			<label class="col-sm-1 control-label no-padding-right" >审核状态</label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${model.statusName!}" placeholder="暂无审核状态" class="form-control" />
+			</div>
+		</div>
+
+		<div class="form-group">
+			<label class="col-sm-1 control-label no-padding-right" >审核管理员</label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${model.adminName!}" placeholder="暂无审核管理员" class="form-control" />
+			</div>
+			
+			<label class="col-sm-1 control-label no-padding-right" >审核说明</label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${model.mark!}" placeholder="审核说明" class="form-control" />
+			</div>
+			
+			<label class="col-sm-1 control-label no-padding-right" >创建时间</label>
+			<div class="col-sm-3">
+				<input type="text" disabled value="${model.create_tm!}" placeholder="暂无创建时间" class="form-control" />
+			</div>
+		</div>
+		
+		<div class="form-group">
+			<label class="col-sm-1 control-label no-padding-right" >身份证正面</label>
+			<div class="col-sm-3">
+				<a href="#;" id="idCardUp">
+					<img id="idCardUpImg" src="${prefix}${model.idcard_up!}" 
+						style="width: 228px; height: 250px;">
+				</a>
+			</div>
+			
+			<label class="col-sm-1 control-label no-padding-right" >身份证反面</label>
+			<div class="col-sm-3">
+				<a href="#;" id="idCardDown">
+					<img id="idCardDownImg" src="${prefix}${model.idcard_down!}" 
+						style="width: 228px; height: 250px;">
+				</a>
+			</div>
+			
+			<label class="col-sm-1 control-label no-padding-right" >资格证</label>
+			<div class="col-sm-3">
+				<a href="#;" id="qualifCert">
+					<img id="qualifCertImg" src="${prefix}${model.qualif_cert!}" 
+						style="width: 228px; height: 250px;">
+				</a>
+			</div>
+		</div>
+
+		<div class="space-4"></div>
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html",{btn_close:"关闭"}) {}
+</form>
+<div class="modal fade" id="imagemodal" tabindex="-1" role="dialog"
+	aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content" style="width: 750px; height: 600px; margin-left: -70px;">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">
+					<span aria-hidden="true">&times;</span><span class="sr-only">关闭</span>
+				</button>
+				<h4 class="modal-title" id="myModalLabel">预览</h4>
+			</div>
+			<div class="modal-body">
+				<img src="" id="imagepreview" style="width: 700px; height: 400px;">
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+			</div>
+		</div>
+	</div>
+</div>
+@}
+<script type="text/javascript">
+$(function(){
+	$("#idCardUp").on("click", function() {
+	   $('#imagepreview').attr('src', $('#idCardUpImg').attr('src')); 
+	   $('#imagemodal').modal('show');
+	});
+	
+	$("#idCardDown").on("click", function() {
+		$('#imagepreview').attr('src', $('#idCardDownImg').attr('src'));
+		$('#imagemodal').modal('show');
+	});
+	
+	$("#qualifCert").on("click", function() {
+		$('#imagepreview').attr('src', $('#qualifCertImg').attr('src'));
+		$('#imagemodal').modal('show');
+	});
+		$("#introLink").bind("click", function() {
+			var id = $(this).attr("data-value");
+			var href = "${basePath}/dgUser/introView/" + id;
+			window.location = href;
+			var layerIndex = parent.layer.getFrameIndex(window.name); //获取窗口索引
+			parent.layer.close(layerIndex);
+		});
+	});
+</script>

@@ -1,0 +1,18 @@
+@layout("/common/_curd/_container.html"){
+
+	<form class="form-horizontal" role="form">
+		<!-- 表单 -->
+		@ var _col=[
+		@			  {name:"消息编码", index:"code", type:"text",newline:true,length:8},
+		@			  {name:"消息名", index:"name", type:"text",newline:true,length:8},
+		@			  {name:"消息类型", index:"type", type:"text",newline:true,length:8},
+		@			  {name:"消息场景", index:"scence", type:"text",newline:true,length:8},
+		@			  {name:"消息内容", index:"content", type:"text",newline:true,length:8}
+		@		   ];
+		@ include("/common/_curd/_view.html", {"col":_col}){}
+		
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html", {btn_close:"关闭"}) {}
+	</form>
+
+@}

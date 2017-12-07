@@ -1,0 +1,26 @@
+list
+===
+select * from dg_business
+
+findByList
+===
+select 
+    a.id,
+    a.money,
+    a.dg_id,
+    a.type,
+    u.name dgUser,
+    d.name typeName,
+    a.create_time,
+    a.mark
+from
+    dg_business a
+        left join
+    dg_user u ON a.dg_id = u.id
+        left join
+    (select 
+        t.name, t.num
+    from
+        tfw_dict t
+    where
+        t.code = '205' and t.num > - 1) as d ON a.type = d.num

@@ -1,0 +1,68 @@
+@layout("/common/_curd/_container.html"){
+
+<script type="text/javascript">
+	var ctx = "${basePath}";
+	var grid_selector = "#grid-table";
+	var pager_selector = "#grid-pager";
+	
+	$(function(){
+		initGrid();
+		initMenuBtn("btns", "${code}");
+	});
+	
+	function initGrid(){
+		var grid_url = ctx + "/${code}/list";
+		var _colnames = ["创建人ID", 
+						"订单ID", 
+						"经度坐标", 
+						"纬度坐标", 
+						"状态", 
+						"进度提交时间", 
+						"备注"];
+		var _colmodel = [{name:"create_id", index:"create_id", width:100},
+						{name:"order_id", index:"order_id", width:100},
+						{name:"longitude", index:"longitude", width:100},
+						{name:"latitude", index:"latitude", width:100},
+						{name:"status", index:"status", width:100},
+						{name:"create_time", index:"create_time", width:100},
+						{name:"mark", index:"mark", width:100}];
+		
+		jQuery(grid_selector).jqGrid({
+			url : grid_url,
+		    shrinkToFit : true,
+			colNames : _colnames,
+			colModel : _colmodel, 
+			jsonReader : {id :"id"},
+			pager : pager_selector,
+			postData : {sort : "id", order : "desc"}
+		});
+	}
+</script>
+
+
+	<!-- 配置 grid -->
+	<div class="row">
+		<div class="col-xs-12 tb-grid">
+			<!-- 配置 查询 -->
+			@ var _col=[
+			@		{name:"创建人ID", index:"create_id", type:"text"},
+			@		{name:"订单ID", index:"order_id", type:"text"},
+			@		{name:"经度坐标", index:"longitude", type:"text"},
+			@		{name:"纬度坐标", index:"latitude", type:"text"},
+			@		{name:"状态", index:"status", type:"text"},
+			@		{name:"进度提交时间", index:"create_time", type:"text"}						
+			@];
+			@ include("/common/_function/_search.html",{"col":_col}){}
+			<!-- 按钮 -->
+			<div class="welljq well-sm" id="btns"></div>
+			<!-- grid -->
+			<table id="grid-table"></table>
+			<!-- 分页-->
+			<div id="grid-pager"></div>
+		</div>
+	</div>
+	
+	<!-- 引入所需的js -->
+	@include("/common/_listscript.html"){}
+	
+@}	

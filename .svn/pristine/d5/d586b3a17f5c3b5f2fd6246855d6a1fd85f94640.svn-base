@@ -1,0 +1,51 @@
+[main]
+securityManager = org.apache.shiro.web.mgt.DefaultWebSecurityManager
+#realm
+adminRealm = com.ikkong.core.shiro.ShiroDbRealm
+dgUserRealm = com.ikkong.core.shiro.DgShiroRealm
+securityManager.realms = $adminRealm, $dgUserRealm
+
+#cache
+shiroCacheManager = org.apache.shiro.cache.ehcache.EhCacheManager
+shiroCacheManager.cacheManagerConfigFile = classpath:ehcache.xml
+securityManager.cacheManager = $shiroCacheManager
+
+#rememberMeManager
+rememberMeCookie = org.apache.shiro.web.servlet.SimpleCookie
+rememberMeCookie.name = rememberMe
+rememberMeCookie.httpOnly = true
+rememberMeCookie.maxAge = 604800
+
+rememberMeManager = org.apache.shiro.web.mgt.CookieRememberMeManager
+#密码默认使用Base64编码，cipherKey生成见 test/java/Base64Test.java
+rememberMeManager.cipherKey = SkZpbmFsQmxhZGUAAAAAAA==
+rememberMeManager.cookie = $rememberMeCookie
+securityManager.rememberMeManager = $rememberMeManager
+
+
+#session
+sessionDAO = org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO
+sessionManager = org.apache.shiro.web.session.mgt.DefaultWebSessionManager
+sessionDAO.activeSessionsCacheName = shiro-activeSessionCache
+sessionManager.sessionDAO = $sessionDAO
+securityManager.sessionManager = $sessionManager
+securityManager.sessionManager.globalSessionTimeout = 1800000
+
+authc.loginUrl = /login/
+user.loginUrl = /login/
+
+[filters]
+formFilter = com.ikkong.core.shiro.ShiroFormFilter
+
+#这里的规则，web.xml中的配置的ShiroFilter会使用到。
+[urls]
+/static/** = anon
+/login = anon
+/doLogin = anon
+/captcha = anon
+/dgUserAndroid/anLogin = anon
+/dgUserAndroid/anRegister = anon
+/dgUserAndroid/modifyPwd = anon
+/sms/passdSms = anon
+/sms/registSms = anon
+/** = formFilter

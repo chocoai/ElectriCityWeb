@@ -1,0 +1,21 @@
+@layout("/common/_curd/_container.html"){
+
+	<form data-url="${basePath}/${code}/update" method="post" class="form-horizontal" role="form">
+		<!-- 表单 -->
+		@ var _table="dg_audit_files";
+		@ var _key="id";
+		@ var _col=[
+		@			  {name:"文件名", index:"file_name", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"文件后缀", index:"file_postfix", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"文件路径", index:"file_path", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"所属对象id", index:"object_id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"文件所属类别", index:"object_type", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"创建时间", index:"create_tm", type:"text",newline:true,length:8,required:"required"}
+		@		   ];
+		@ include("/common/_curd/_edit.html", {"col":_col, "table":_table, "key":_key}){}
+		
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html", {btn_save:"修改", btn_close:"关闭"}) {}
+	</form>
+
+@}

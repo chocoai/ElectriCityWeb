@@ -1,0 +1,39 @@
+@layout("/common/_curd/_container.html"){
+	<!-- PAGE CONTENT BEGINS -->
+	<form data-url="${basePath}/${code}/auditDeal" method="post" class="form-horizontal" role="form">
+		<div class="space-4"></div>
+		<!-- #section:elements.form -->		
+		<div class="form-group">
+			<input type="hidden" name="ids" value="${checkids!}"/>
+			<input type="hidden" id="auditFlag" name="status" />
+			<label class="col-sm-2 control-label no-padding-right"> 审核描述 </label>
+			<div class="col-sm-8">
+				<textarea id="desc" name="mark" rows="10" cols="30" placeholder="审核描述" class="form-control"></textarea>
+			</div>
+		</div>
+		<div class="space-4"></div>
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn_diy.html",{btn_passd:"审核通过",btn_fail:"审核失败",btn_close:"关闭"}) {}
+</form>
+@}
+<script type="text/javascript">
+$(function(){
+	$("#btn_passd").bind("click",function(){
+		return check(1);
+	});
+	
+	$("#btn_fail").bind("click",function(){
+		return check(2);
+	});
+});
+
+function check(status){
+	$("#auditFlag").val(status);
+	if($('#desc').val()==='') {
+		clearLoading(appindex);
+		layer.msg('描述不能为空!', {shift: 1});
+		return false;
+	}
+	return true;
+}
+</script>

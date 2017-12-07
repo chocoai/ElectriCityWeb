@@ -1,0 +1,64 @@
+list
+===
+select * from dg_message
+
+findBackground
+===
+SELECT 
+    a.id,
+    a.content,
+    a.tempid,
+    t.name tempName,
+    a.status,
+    s.NAME statusName,
+    a.type,
+    d.NAME typeName,
+    DATE_FORMAT(a.create_time,'%Y-%m-%d %H:%i') createTime,
+    a.dg_id dgId
+FROM
+    dg_message a
+        LEFT JOIN
+	dg_msg_template t
+		on a.tempid = t.id
+        left join
+    (SELECT 
+        t.name, t.num
+    FROM
+        tfw_dict t
+    WHERE
+        t.code = '207' AND t.num > - 1) AS d ON a.type = d.num
+        LEFT JOIN
+    (SELECT 
+        t.name, t.num
+    FROM
+        tfw_dict t
+    WHERE
+        t.code = '206' AND t.num > - 1) AS s ON a.status = s.num
+
+findPage
+===
+SELECT 
+    a.id,
+    a.content,    
+    a.status,
+    s.NAME statusName,
+    a.type,
+    d.NAME typeName,
+    DATE_FORMAT(a.create_time,'%Y-%m-%d %H:%i') createTime,
+    a.dg_id dgId
+FROM
+    dg_message a
+        LEFT JOIN
+    (SELECT 
+        t.name, t.num
+    FROM
+        tfw_dict t
+    WHERE
+        t.code = '207' AND t.num > - 1) AS d ON a.type = d.num
+        LEFT JOIN
+    (SELECT 
+        t.name, t.num
+    FROM
+        tfw_dict t
+    WHERE
+        t.code = '206' AND t.num > - 1) AS s ON a.status = s.num

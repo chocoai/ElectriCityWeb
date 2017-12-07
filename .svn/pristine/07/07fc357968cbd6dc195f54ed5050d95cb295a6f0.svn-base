@@ -1,0 +1,27 @@
+@layout("/common/_curd/_container.html"){
+
+	<form data-url="${basePath}/${code}/update" method="post" class="form-horizontal" role="form">
+		<!-- 表单 -->
+		@ var _table="dg_manager_user";
+		@ var _key="id";
+		@ var _col=[
+@			  {name:"自动增长Id", index:"id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"用户名", index:"name", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"注册id", index:"register_code", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"注册密码", index:"register_pass", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"加密盐", index:"salt", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"", index:"register_time", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"用户状态，1冻结，0正常", index:"status", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"根据当前创建用户的等级来判断，1级可创建2,3级，2级只能创建3级", index:"level", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"修改用户", index:"modify_user", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"修改时间", index:"modify_time", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"管理员标记", index:"admin_flag", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"版本记录号", index:"version", type:"text",newline:true,length:8,required:"required"}		
+		@		   ];
+		@ include("/common/_curd/_edit.html", {"col":_col, "table":_table, "key":_key}){}
+		
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html", {btn_save:"修改", btn_close:"关闭"}) {}
+	</form>
+
+@}

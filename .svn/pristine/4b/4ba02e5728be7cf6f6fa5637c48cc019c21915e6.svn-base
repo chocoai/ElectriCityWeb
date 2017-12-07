@@ -1,0 +1,68 @@
+@layout("/common/_curd/_container.html"){
+<script type="text/javascript">
+	var ctx = "${basePath}";
+	var grid_selector = "#grid-table";
+	var pager_selector = "#grid-pager";
+	
+	$(function(){
+		initGrid();
+		initMenuBtn("btns", "${workOrderCode}");
+	});
+	
+	function initGrid(){
+		var grid_url = ctx + "/${code}/workorderList?where=%7B%22order_id_equal%22:%22${orderId}%22%7D";
+		var _colnames = ["电工用户", 
+						"周期", 
+						"工种", 
+						"金额",
+						"总额",
+						"项目状态", 
+						"接单人", 
+						"创建时间", 
+						"接收时间", 
+						"完成时间", 
+						"补贴金额", 
+						"补贴说明"];
+		var _colmodel = [{name:"dgUser", index:"dgUser", width:100},
+						{name:"orderDays", index:"orderDays", width:100},
+						{name:"workTypeName", index:"workTypeName", width:100},
+						{name:"money", index:"money", width:100},
+						{name:"total_money", index:"total_money", width:100},
+						{name:"statusName", index:"statusName", width:100},
+						{name:"acceptUser", index:"acceptUser", width:100},
+						{name:"create_time", index:"create_time", width:100},
+						{name:"accpet_time", index:"accpet_time", width:100},
+						{name:"finish_time", index:"finish_time", width:100},
+						{name:"subsidy", index:"subsidy", width:100},
+						{name:"subsidy_mark", index:"subsidy_mark", width:100}];
+		
+		jQuery(grid_selector).jqGrid({
+			url : grid_url,
+		    shrinkToFit : true,
+			colNames : _colnames,
+			colModel : _colmodel, 
+			jsonReader : {id :"id"},
+			pager : pager_selector,
+			postData : {sort : "id", order : "desc"}
+		});
+	}
+</script>
+
+
+	<!-- 配置 grid -->
+	<div class="row">
+		<div class="col-xs-12 tb-grid">
+			<!-- 按钮 -->
+			<div class="welljq well-sm" id="btns"></div>
+			<!-- grid -->
+			<table id="grid-table"></table>
+			<!-- 分页-->
+			<div id="grid-pager"></div>
+		</div>
+	</div>
+	
+	
+	<!-- 引入所需的js -->
+	@include("/common/_listscript.html"){}
+	
+@}	

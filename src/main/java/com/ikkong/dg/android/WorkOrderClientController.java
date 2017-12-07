@@ -5,26 +5,39 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.ikkong.common.constant.CommonConts;
+import com.ikkong.common.constant.CommonConts.AgingTypeCode;
 import com.ikkong.common.constant.CommonConts.ItemStatus;
+import com.ikkong.common.constant.CommonConts.MsgTempCode;
+import com.ikkong.common.constant.CommonConts.MsgType;
 import com.ikkong.common.constant.CommonConts.UserStatus;
 import com.ikkong.core.base.BaseController;
 import com.ikkong.core.dao.Blade;
 import com.ikkong.core.dao.Db;
+import com.ikkong.core.shiro.DgUserToken;
 import com.ikkong.core.toolbox.Record;
 import com.ikkong.core.toolbox.support.BladePage;
+import com.ikkong.dg.meta.blade.BladeUtils;
 import com.ikkong.dg.model.DgOrder;
 import com.ikkong.dg.model.DgUser;
 import com.ikkong.dg.model.UserWorktype;
 import com.ikkong.dg.model.WorkOrder;
+import com.ikkong.dg.model.WorkType;
+import com.ikkong.dg.model.json.ItemBill;
 import com.ikkong.dg.service.DgOrderService;
 import com.ikkong.dg.service.DgUserService;
+import com.ikkong.dg.service.MessagesService;
+import com.ikkong.dg.service.OrderApplyService;
 import com.ikkong.dg.service.UserWorktypeService;
 import com.ikkong.dg.service.WorkOrderService;
+import com.ikkong.dg.service.WorkTypeService;
 import com.ikkong.dg.service.impl.DgOrderServiceImpl;
 import com.ikkong.dg.service.impl.DgUserServiceImpl;
+import com.ikkong.dg.service.impl.MessagesServiceImpl;
+import com.ikkong.dg.service.impl.OrderApplyServiceImpl;
 import com.ikkong.dg.service.impl.UserWorktypeServiceImpl;
 import com.ikkong.dg.service.impl.WorkOrderServiceImpl;
+import com.ikkong.dg.service.impl.WorkTypeServiceImpl;
+import com.ikkong.system.model.Parameter;
 
 /**
  * 工种订单
@@ -33,68 +46,72 @@ import com.ikkong.dg.service.impl.WorkOrderServiceImpl;
  *
  */
 public class WorkOrderClientController extends BaseController {
-	
-	private static int pageSize = CommonConts.CLIENT_PAGE_SIZE;
-	
+
 	private static final String SQL_LIST = "WorkOrder.findList";
-	
+
 	private DgOrderService orderServ = new DgOrderServiceImpl();
-	
+
 	private WorkOrderService service = new WorkOrderServiceImpl();
-	
+
 	private DgUserService userServ = new DgUserServiceImpl();
-	
+
 	private UserWorktypeService userWorkTpServ = new UserWorktypeServiceImpl();
+
+	private OrderApplyService applyServ = new OrderApplyServiceImpl();
+
+	private WorkTypeService workTypeServ = new WorkTypeServiceImpl();
+	
+	private MessagesService msgServ = new MessagesServiceImpl();
 
 	/**
 	 * 子项目订单添加
 	 */
-	public void addProItem(){
+	public void addProItem() {
 		Long dgUserId = dgUserToken().getUserId();
 		DgUser dgUser = userServ.findById(dgUserId);
-		if(UserStatus.NORMAL.getStatusVal() != dgUser.getStatus()){
+		if (UserStatus.NORMAL.getStatusVal() != dgUser.getStatus()) {
 			renderJson(warn("您当前账户状态不能发布工种单！"));
 			return;
 		}
 		Long orderId = getParaToLong("orderId");
 		Integer orderDate = getParaToInt("orderDate");
 		Integer worktypeId = getParaToInt("worktypeId");
-		String money = getPara("money");//Double
+		String money = getPara("money");// Double
 		Integer status = getParaToInt("status");
 		String subsidy = getPara("subsidy");
-		String subsidyMark = getPara("subsidyMark");//Double
+		String subsidyMark = getPara("subsidyMark");// Double
 		String mark = getPara("mark");
-		
-		if(orderId == null){
+
+		if (orderId == null) {
 			renderJson(error("项目头引用不能为空!"));
-			return ;
+			return;
 		}
-		if(orderDate == null){
+		if (orderDate == null) {
 			renderJson(error("项目周期不能为空!"));
-			return ;
+			return;
 		}
-		if(worktypeId == null){
+		if (worktypeId == null) {
 			renderJson(error("工种类型不能为空!"));
-			return ;
+			return;
 		}
-		if(status == null){
+		if (status == null) {
 			renderJson(error("子项目状态不能为空!"));
-			return ;
+			return;
 		}
-		if(StringUtils.isEmpty(money)){
+		if (StringUtils.isEmpty(money)) {
 			renderJson(error("项目金额不能为空!"));
-			return ;
-		} else if(Double.valueOf(money) < 0D){
+			return;
+		} else if (Double.valueOf(money) < 0D) {
 			renderJson(error("项目金额不能小于 0 !"));
-			return ;
+			return;
 		}
-		
+
 		WorkOrder item = new WorkOrder();
 		item.setOrder_date(orderDate);
-		if(money == null) {
+		if (money == null) {
 			money = "0";
 		}
-		if(subsidy == null) {
+		if (subsidy == null) {
 			subsidy = "0";
 		}
 		item.setMoney(Double.valueOf(money));
@@ -105,13 +122,11 @@ public class WorkOrderClientController extends BaseController {
 		item.setSubsidy_mark(subsidyMark);
 		item.setCreate_id(dgUserId);
 		item.setCreate_time(new Date());
-		item.setVersion(1);
-		if(ItemStatus.PUBLISH.getStatusVal() == status) {
-			item.setPublish_time(new Date());
-		}
-		
+		item.setVersion(1);		
+
 		try {
-			if(service.save(item)){
+			if (service.save(item)) {
+				msgServ.addSysMsgByTemp(dgUserId, MsgTempCode.TMP_1032.getTmpVal(), dgUser.getPhoneno());
 				renderJson(success("子项目单添加成功!"));
 			} else {
 				renderJson(fail("子项目单新增失败!"));
@@ -120,50 +135,73 @@ public class WorkOrderClientController extends BaseController {
 			renderJson(fail("服务端保存异常, 请联系管理员!"));
 		}
 	}
-	
+
 	/**
 	 * 修改子项目信息
 	 */
-	public void modifyProItem(){
+	public void modifyProItem() {
 		Long id = getParaToLong("id");
 		Long orderId = getParaToLong("orderId");
 		Integer orderDate = getParaToInt("orderDate");
 		Integer worktypeId = getParaToInt("worktypeId");
-		String money = getPara("money");//Double
+		String money = getPara("money");// Double
 		Integer status = getParaToInt("status");
 		String subsidy = getPara("subsidy");
-		String subsidyMark = getPara("subsidyMark");//Double
+		String subsidyMark = getPara("subsidyMark");// Double
 		String mark = getPara("mark");
-		
-		if(id == null){
+
+		if (id == null) {
 			renderJson(error("请提供子项目单Id参数!"));
-			return ;
+			return;
 		}
-		if(orderId == null){
+		if (orderId == null) {
 			renderJson(error("项目头引用不能为空!"));
-			return ;
+			return;
 		}
-		if(orderDate == null){
+		if (orderDate == null) {
 			renderJson(error("项目周期不能为空!"));
-			return ;
+			return;
 		}
-		if(worktypeId == null){
+		if (worktypeId == null) {
 			renderJson(error("工种类型不能为空!"));
-			return ;
+			return;
 		}
-		if(status == null){
+		if (status == null) {
 			renderJson(error("子项目状态不能为空!"));
-			return ;
+			return;
 		}
-		if(StringUtils.isEmpty(money)){
+		if (StringUtils.isEmpty(money)) {
 			renderJson(error("项目金额不能为空!"));
-			return ;
-		} else if(Double.valueOf(money) < 0D){
+			return;
+		} else if (Double.valueOf(money) < 0D) {
 			renderJson(error("项目金额不能小于 0 !"));
-			return ;
+			return;
+		}
+
+		WorkOrder item = service.findById(id);
+		Long userId = dgUserToken().getUserId();
+		if (ItemStatus.TERMINATE.getStatusVal() == status) {// 项目拒绝次数
+			if(item.getCreate_id() == userId) {
+				Integer times = item.getReject_times();
+				if(times == null) {
+					times = 1;
+				} else times += 1;
+				item.setReject_times(times);
+				
+				Integer paraVal = BladeUtils.getParaValByCode(AgingTypeCode.AGE_203.getCodeVal());
+				if(paraVal > item.getReject_times()) {//终止项目次数达到配置次数，您的帐号已冻结
+					msgServ.addMsgByTemplate(userId, MsgType.EVENT_MSG.getStatusVal(), MsgTempCode.TMP_1003.getTmpVal());
+					DgUser freezeUser = userServ.findById(userId);
+					freezeUser.setStatus(UserStatus.FREEZE.getStatusVal());
+					freezeUser.setVersion(freezeUser.getVersion() + 1);
+					userServ.update(freezeUser);
+				}
+			} else {
+				renderJson(error("不是项目发布人，不能进行终止操作!"));
+				return;
+			}			
 		}
 		
-		WorkOrder item = service.findById(id);		
 		item.setOrder_date(orderDate);
 		item.setMoney(Double.valueOf(money));
 		item.setMark(mark);
@@ -172,10 +210,10 @@ public class WorkOrderClientController extends BaseController {
 		item.setSubsidy(Double.valueOf(subsidy));
 		item.setSubsidy_mark(subsidyMark);
 		item.setCreate_time(new Date());
-		item.setVersion(item.getVersion()+1);
-		
+		item.setVersion(item.getVersion() + 1);		
+
 		try {
-			if(service.update(item)){
+			if (service.update(item)) {
 				renderJson(success("子项目单信息更新成功!"));
 			} else {
 				renderJson(fail("子项目单信息更新失败!"));
@@ -184,15 +222,15 @@ public class WorkOrderClientController extends BaseController {
 			renderJson(error("服务端保存异常, 请联系管理员!"));
 		}
 	}
-	
+
 	/**
 	 * @type 类型1: 查我发布的，类型2：查我招标的
 	 * @status 根据多状态查询
-	 * @worktypeId  工种类型Id
-	 * @createStart  创建日期区间-开始日期
-	 * @createEnd   创建日期区间-截止日期
-	 * @finishStart  结束日期区间-开始日期
-	 * @finishEnd   结束日期区间-截止日期
+	 * @worktypeId 工种类型Id
+	 * @createStart 创建日期区间-开始日期
+	 * @createEnd 创建日期区间-截止日期
+	 * @finishStart 结束日期区间-开始日期
+	 * @finishEnd 结束日期区间-截止日期
 	 * @author Administrator
 	 */
 	public void query() {
@@ -203,68 +241,62 @@ public class WorkOrderClientController extends BaseController {
 		String createEnd = getPara("createEnd");
 		String finishStart = getPara("finishStart");
 		String finishEnd = getPara("finishEnd");
-		
-		Integer page = getParaToInt("page");
-		if (page == null) {
-			page = 1;
-		}
 
 		Long dgId = dgUserToken().getUserId();
-		int start = (page - 1) * pageSize + 1;// 分页起始位置
 		String sql = Blade.dao().getScript(SQL_LIST).getSql();
 		Record paraMap = Record.create();
-		StringBuffer buf = new StringBuffer(sql).append(" where 1=1 ");		
-				
-		if(type == null){
+		StringBuffer buf = new StringBuffer(sql).append(" where 1=1 ");
+
+		if (type == null) {
 			renderJson(error("类型参数不能填空！"));
-			return ;
-		} else if(type == 1){
+			return;
+		} else if (type == 1) {
 			paraMap.set("dgUserId", dgId);
 			buf.append(" and a.create_id = #{dgUserId}");
-		} else if(type == 2){
+		} else if (type == 2) {
 			paraMap.set("dgUserId", dgId);
 			buf.append(" and a.accept_user_id = #{dgUserId}");
 		}
-		
-		if(worktypeId != null && worktypeId > 0){
+
+		if (worktypeId != null && worktypeId > 0) {
 			paraMap.set("worktypeId", worktypeId);
 			buf.append(" and a.worktype_id = #{worktypeId}");
 		} else {// 默认电工自己的
 			String workIds = getWorkTypeIds(dgId);
-			if(workIds != null) {
+			if (workIds != null) {
 				paraMap.set("worktypeIds", workIds.split(","));
-				buf.append(" and a.worktype_id in (#{join(worktypeIds)}) ");			
+				buf.append(" and a.worktype_id in (#{join(worktypeIds)}) ");
 			}
 		}
-		
-		if(StringUtils.isNotBlank(status) && !"-1".equals(status)){
-			paraMap.set("status", status.split(","));//多状态查询
-			buf.append(" and a.status in (#{join(status)})");//join 
+
+		if (StringUtils.isNotBlank(status) && !"-1".equals(status)) {
+			paraMap.set("status", status.split(","));// 多状态查询
+			buf.append(" and a.status in (#{join(status)})");// join
 		}
-		
-		if(StringUtils.isNotBlank(createStart)){
+
+		if (StringUtils.isNotBlank(createStart)) {
 			paraMap.set("createStart", createStart);//
 			buf.append(" and a.create_time >= #{createStart}");
 		}
-		
-		if(StringUtils.isNotBlank(createEnd)){
+
+		if (StringUtils.isNotBlank(createEnd)) {
 			paraMap.set("createEnd", createEnd);
 			buf.append(" and a.create_time < DATE_ADD(#{createEnd},INTERVAL 1 DAY)");
 		}
-		
-		if(StringUtils.isNotBlank(finishStart)){
+
+		if (StringUtils.isNotBlank(finishStart)) {
 			paraMap.set("finishStart", finishStart);
 			buf.append(" and a.finish_time >= #{finishStart} ");
 		}
-		
-		if(StringUtils.isNotBlank(finishEnd)){
+
+		if (StringUtils.isNotBlank(finishEnd)) {
 			paraMap.set("finishEnd", finishEnd);
 			buf.append(" and a.finish_time < DATE_ADD(#{finishEnd},INTERVAL 1 DAY)");
-		}		
+		}
 		buf.append(" order by a.create_time desc");
-		
+
 		try {
-			BladePage<Object> resultPage = Db.init().paginate(buf.toString(), paraMap, start, pageSize);
+			BladePage<Object> resultPage = Db.init().paginate(buf.toString(), paraMap, pageNo("page"), pageSize);
 			if (resultPage != null && !resultPage.getRows().isEmpty()) {
 				renderJson(success("查询到子项目记录！").setData(resultPage));
 			} else {
@@ -275,13 +307,13 @@ public class WorkOrderClientController extends BaseController {
 			renderJson(error("服务端查询异常！"));
 		}
 	}
-	
+
 	/**
 	 * @myType 类型1: 符合我工种的招标单，类型2：所有工种的招标单
-	 * @createStart  创建日期区间-开始日期
-	 * @createEnd   创建日期区间-截止日期
-	 * @finishStart  结束日期区间-开始日期
-	 * @finishEnd   结束日期区间-截止日期
+	 * @createStart 创建日期区间-开始日期
+	 * @createEnd 创建日期区间-截止日期
+	 * @finishStart 结束日期区间-开始日期
+	 * @finishEnd 结束日期区间-截止日期
 	 * @author Administrator
 	 */
 	public void usefull() {
@@ -290,62 +322,64 @@ public class WorkOrderClientController extends BaseController {
 		String finishStart = getPara("finishStart");
 		String finishEnd = getPara("finishEnd");
 		Integer myType = getParaToInt("myType");
-		
-		Integer page = getParaToInt("page");
-		if (page == null) {
-			page = 1;
-		}
+		Integer worktypeId = getParaToInt("worktypeId");
 
 		Long dgId = dgUserToken().getUserId();
-		int start = (page - 1) * pageSize + 1;// 分页起始位置
 		String sql = Blade.dao().getScript(SQL_LIST).getSql();
 		Record paraMap = Record.create();
 		StringBuffer buf = new StringBuffer(sql).append(" where a.status = #{status} ");
 		paraMap.set("status", ItemStatus.BIDDING.getStatusVal());
 		buf.append(" and a.create_id <> ").append(dgId);
-		
-		if(myType == null) {
+
+		if (myType == null) {
 			renderJson(warn("myType参数为必传参数，请提供！"));
 			return;
 		}
-		
-		if(myType != 1 && myType != 2) {
+
+		if (myType != 1 && myType != 2) {
 			renderJson(warn("该myType参数值未做定义！"));
 			return;
 		}
 		
-		if(myType == 1) {
-			String workIds = getWorkTypeIds(dgId);
-			if(workIds != null) {
-				paraMap.set("worktypeIds", workIds.split(","));
-				buf.append(" and a.worktype_id in (#{join(worktypeIds)}) ");			
-			}
+		if(worktypeId != null && worktypeId > 0) {//查询指定工种类型
+			paraMap.set("worktypeId", worktypeId);
+			buf.append(" and a.worktype_id = #{worktypeId}");
+		} else {
+			if (myType == 1) {//符合我工种的招标单
+				String workIds = getWorkTypeIds(dgId);
+				if (workIds != null) {
+					paraMap.set("worktypeIds", workIds.split(","));
+					buf.append(" and a.worktype_id in (#{join(worktypeIds)}) ");
+				}
+			}			
 		}
-		
-		if(StringUtils.isNotBlank(createStart)){
+
+
+		if (StringUtils.isNotBlank(createStart)) {
 			paraMap.set("createStart", createStart);//
 			buf.append(" and a.create_time >= #{createStart}");
 		}
-		
-		if(StringUtils.isNotBlank(createEnd)){
+
+		if (StringUtils.isNotBlank(createEnd)) {
 			paraMap.set("createEnd", createEnd);
 			buf.append(" and a.create_time < DATE_ADD(#{createEnd},INTERVAL 1 DAY)");
 		}
-		
-		if(StringUtils.isNotBlank(finishStart)){
+
+		if (StringUtils.isNotBlank(finishStart)) {
 			paraMap.set("finishStart", finishStart);
 			buf.append(" and a.finish_time >= #{finishStart} ");
 		}
-		
-		if(StringUtils.isNotBlank(finishEnd)){
+
+		if (StringUtils.isNotBlank(finishEnd)) {
 			paraMap.set("finishEnd", finishEnd);
 			buf.append(" and a.finish_time < DATE_ADD(#{finishEnd},INTERVAL 1 DAY)");
 		}
-		buf.append(" and NOT EXISTS(SELECT z.work_order_id FROM dg_order_apply z WHERE a.id = z.work_order_id AND z.type=1 and z.status in (0,1)) ");		
+		buf.append(
+				" and NOT EXISTS(SELECT z.work_order_id FROM dg_order_apply z WHERE a.id = z.work_order_id AND z.type=1 and z.status in (0,1)) ");
 		buf.append(" order by a.create_time desc");
-		
+
 		try {
-			BladePage<Object> resultPage = Db.init().paginate(buf.toString(), paraMap, start, pageSize);
+			BladePage<Object> resultPage = Db.init().paginate(buf.toString(), paraMap, pageNo("page"), pageSize);
 			if (resultPage != null && !resultPage.getRows().isEmpty()) {
 				renderJson(success("查询到正在招标的记录！").setData(resultPage));
 			} else {
@@ -356,37 +390,26 @@ public class WorkOrderClientController extends BaseController {
 			renderJson(error("服务端查询异常！"));
 		}
 	}
-	
+
 	/**
 	 * @itemId 项目头Id
+	 * @workOrderId 项目子单Id
 	 * @worktypeId 工种类型Id
 	 * @status 0保存,1发布中，2招标中，3已招标，4项目进行中，5完成，6终止，7撤销，8挂起
-	 * @createStart  创建日期区间-开始日期
-	 * @createEnd   创建日期区间-截止日期
-	 * @finishStart  结束日期区间-开始日期
-	 * @finishEnd   结束日期区间-截止日期
+	 * @createStart 创建日期区间-开始日期
+	 * @createEnd 创建日期区间-截止日期
+	 * @finishStart 结束日期区间-开始日期
+	 * @finishEnd 结束日期区间-截止日期
 	 * @author Administrator
 	 */
 	public void byItemId() {
 		String createStart = getPara("createStart");
 		String createEnd = getPara("createEnd");
-		String finishStart = getPara("finishStart");
-		String finishEnd = getPara("finishEnd");
-		Integer status = getParaToInt("status");// 
+		Integer status = getParaToInt("status");//
 		Long itemId = getParaToLong("itemId");// 项目id
 		Integer worktypeId = getParaToInt("worktypeId");//
-		
-		if(itemId == null || itemId <= 0) {
-			renderJson(warn("项目头Id无效，请提供正确的头Id！"));
-			return;
-		}
-		
-		DgOrder order = orderServ.findById(itemId);
-		if(order == null) {
-			renderJson(warn("该项目不存在！"));
-			return;
-		}
-		
+		Integer workOrderId = getParaToInt("workOrderId");//
+
 		Integer page = getParaToInt("page");
 		if (page == null) {
 			page = 1;
@@ -395,63 +418,125 @@ public class WorkOrderClientController extends BaseController {
 		int start = (page - 1) * pageSize + 1;// 分页起始位置
 		String sql = Blade.dao().getScript(SQL_LIST).getSql();
 		Record paraMap = Record.create();
-		StringBuffer buf = new StringBuffer(sql).append(" where a.order_id = #{orderId} ");
-		paraMap.set("orderId", itemId);
-		
-		if(status > -1) {
+		StringBuffer buf = new StringBuffer(sql).append(" where 1=1 ");
+
+		if ((itemId == null || itemId <= 0) && (workOrderId == null || workOrderId <= 0)) {
+			renderJson(warn("项目头Id和工种单Id不能同时为空！"));
+			return;
+		} else if (itemId != null && itemId > 0) {
+			DgOrder order = orderServ.findById(itemId);
+			if (order == null) {
+				renderJson(warn("该项目不存在！"));
+				return;
+			} else {
+				buf.append(" and a.order_id = #{orderId} ");
+				paraMap.set("orderId", itemId);
+			}
+		} else if (workOrderId != null && workOrderId > 0) {
+			WorkOrder workOrder = service.findById(workOrderId);
+			if (workOrder == null) {
+				renderJson(warn("该工种单不存在！"));
+				return;
+			} else {
+				buf.append(" and a.id = #{workOrderId} ");
+				paraMap.set("workOrderId", workOrderId);
+			}
+		}
+
+		if (status > -1) {
 			buf.append(" and a.status = #{status}");
 			paraMap.set("status", status);
 		}
-		
-		if(worktypeId > -1) {
+
+		if (worktypeId > -1) {
 			buf.append(" and a.worktype_id = #{worktypeId}");
 			paraMap.set("worktypeId", worktypeId);
 		}
-		
-		if(StringUtils.isNotBlank(createStart)){
+
+		if (StringUtils.isNotBlank(createStart)) {
 			paraMap.set("createStart", createStart);//
 			buf.append(" and a.create_time >= #{createStart}");
 		}
-		
-		if(StringUtils.isNotBlank(createEnd)){
+
+		if (StringUtils.isNotBlank(createEnd)) {
 			paraMap.set("createEnd", createEnd);
 			buf.append(" and a.create_time < DATE_ADD(#{createEnd},INTERVAL 1 DAY)");
 		}
-		
-		if(StringUtils.isNotBlank(finishStart)){
-			paraMap.set("finishStart", finishStart);
-			buf.append(" and a.finish_time >= #{finishStart} ");
-		}
-		
-		if(StringUtils.isNotBlank(finishEnd)){
-			paraMap.set("finishEnd", finishEnd);
-			buf.append(" and a.finish_time < DATE_ADD(#{finishEnd},INTERVAL 1 DAY)");
-		}
-		
+
 		buf.append(" order by a.create_time desc");
-		
+
 		try {
 			BladePage<Object> resultPage = Db.init().paginate(buf.toString(), paraMap, start, pageSize);
 			if (resultPage != null && !resultPage.getRows().isEmpty()) {
-				renderJson(success("查询到项目itemId为"+itemId+"的记录！").setData(resultPage));
+				renderJson(success("查询到项目itemId为" + itemId + "的记录！").setData(resultPage));
 			} else {
-				renderJson(warn("未查询到itemId为"+itemId+"的记录!"));
+				renderJson(warn("未查询到itemId为" + itemId + "的记录!"));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			renderJson(error("服务端查询异常！"));
 		}
 	}
-	
+
+	public void itemBill() {// 项目结算信息
+		Long itemId = getParaToLong("id");
+		if (itemId == null || itemId < 1) {
+			renderJson(warn("无效的工种单参数！"));
+			return;
+		}
+		try {
+			WorkOrder item = service.findById(itemId);
+			if (item == null) {
+				renderJson(warn("查询不到该ID对应的工种单！"));
+				return;
+			}
+
+			Long dgUserId = dgUserToken().getUserId();
+			WorkType workType = workTypeServ.findById(item.getWorktype_id());
+			Record paras = Record.create().set("dgUserId", dgUserId).set("workOrderId", itemId);
+
+			// 加班天数
+			String applyCountSql = "select count(1) from dg_order_apply t where t.status = 1 and t.type=3 "
+					+ " and t.create_id = #{dgUserId} and t.work_order_id = #{workOrderId} ";
+
+			// 实际上班天数
+			String progressCountSql = "select count(1) days from dg_order_progress b where b.status=1 "
+					+ " and b.end_status = 1 and b.create_id = #{dgUserId} and b.work_order_id = #{workOrderId}";
+
+			Integer applyDays = Db.init().queryInt(applyCountSql, paras);
+			Integer progressDays = Db.init().queryInt(progressCountSql, paras);
+			Double overCnt = 0D; // 加班天数*加班酬劳(工种表 (sys_dg_worktype)字段(over_money))
+			if (progressDays != null && progressDays > 0) {
+				overCnt = workType.getOver_money() * applyDays;
+			}
+
+			ItemBill bill = new ItemBill();
+			bill.setFactDays(progressDays);
+			bill.setId(itemId);
+			bill.setSubsidyMoney(item.getSubsidy());// 补贴金额
+			bill.setOverDays(applyDays);// 加班天数
+			// 总金额=每天酬劳 *实际施工天数+加班酬劳+补贴金额
+			Double total = workType.getSalary() * progressDays + overCnt + item.getSubsidy();
+			bill.setTotal(total);
+			bill.setOverMoney(overCnt);// 加班酬劳
+
+			renderJson(success("获取到项目结算信息！").setData(bill));
+		} catch (Exception e) {
+			e.printStackTrace();
+			renderJson(error("项目结算信息获取异常！"));
+		}
+
+	}
+
 	private String getWorkTypeIds(Long dgUId) {
 		List<UserWorktype> resList = userWorkTpServ.findBy("where dg_userid = #{dgUserId}",
 				Record.create().set("dgUserId", dgUId));
-		if(resList != null && !resList.isEmpty()) {
+		if (resList != null && !resList.isEmpty()) {
 			StringBuffer ids = new StringBuffer();
-			for(UserWorktype vo : resList) {
+			for (UserWorktype vo : resList) {
 				ids.append(vo.getWorktype_id()).append(",");
 			}
-			return ids.delete(ids.length()-1, ids.length()).toString();
+			return ids.delete(ids.length() - 1, ids.length()).toString();
 		}
 		return null;
 	}

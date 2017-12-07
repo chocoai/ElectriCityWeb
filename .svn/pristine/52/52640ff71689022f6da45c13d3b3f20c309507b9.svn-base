@@ -1,0 +1,29 @@
+@layout("/common/_curd/_container.html"){
+
+	<form data-url="${basePath}/${code}/update" method="post" class="form-horizontal" role="form">
+		<!-- 表单 -->
+		@ var _table="dg_work_order";
+		@ var _key="id";
+		@ var _col=[
+@			  {name:"", index:"id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"电工用户id", index:"create_id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"订单id", index:"order_id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"订单周期", index:"order_date", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"工种类型id", index:"worktype_id", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"项目描述", index:"mark", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"项目金额", index:"money", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"项目状态", index:"status", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"接单人id", index:"accpet_user", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"订单创建时间", index:"create_time", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"订单接收时间", index:"accpet_time", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"完成时间", index:"finish_time", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"补贴金额", index:"subsidy", type:"text",newline:true,length:8,required:"required"},
+		@			  {name:"补贴说明", index:"subsidy_mark", type:"text",newline:true,length:8,required:"required"}		
+		@		   ];
+		@ include("/common/_curd/_edit.html", {"col":_col, "table":_table, "key":_key}){}
+		
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html", {btn_save:"修改", btn_close:"关闭"}) {}
+	</form>
+
+@}

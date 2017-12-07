@@ -1,0 +1,26 @@
+@layout("/common/_curd/_container.html"){
+
+	<form class="form-horizontal" role="form">
+		<!-- 表单 -->
+		@ var _col=[
+			
+@			  {name:"自动增长Id", index:"id", type:"text",newline:true,length:8},
+		@			  {name:"用户名", index:"name", type:"text",newline:true,length:8},
+		@			  {name:"注册id", index:"register_code", type:"text",newline:true,length:8},
+		@			  {name:"注册密码", index:"register_pass", type:"text",newline:true,length:8},
+		@			  {name:"加密盐", index:"salt", type:"text",newline:true,length:8},
+		@			  {name:"", index:"register_time", type:"text",newline:true,length:8},
+		@			  {name:"用户状态，1冻结，0正常", index:"status", type:"text",newline:true,length:8},
+		@			  {name:"根据当前创建用户的等级来判断，1级可创建2,3级，2级只能创建3级", index:"level", type:"text",newline:true,length:8},
+		@			  {name:"修改用户", index:"modify_user", type:"text",newline:true,length:8},
+		@			  {name:"修改时间", index:"modify_time", type:"text",newline:true,length:8},
+		@			  {name:"管理员标记", index:"admin_flag", type:"text",newline:true,length:8},
+		@			  {name:"版本记录号", index:"version", type:"text",newline:true,length:8}		
+		@		   ];
+		@ include("/common/_curd/_view.html", {"col":_col}){}
+		
+		<!-- 按钮 -->
+		@ include("/common/_curd/_btn.html", {btn_close:"关闭"}) {}
+	</form>
+
+@}

@@ -1,0 +1,65 @@
+@layout("/common/_curd/_container.html"){
+
+<script type="text/javascript">
+	var ctx = "${basePath}";
+	var grid_selector = "#grid-table";
+	var pager_selector = "#grid-pager";
+	
+	$(function(){
+		initGrid();
+		initMenuBtn("btns", "${code}");
+		$('.col-xs-4').css({'width': '70%'}); 
+	});
+	
+	function initGrid(){
+		var condition = encodeURI('{"work_order_id_equal":"${workOrderId}"}');
+		var grid_url = ctx + "/${applyCode}/applyList";
+		var _colnames = ["电工用户", 
+						"申请类型", 
+						"状态", 
+						"招标说明", 
+						"审核描述",
+						"创建时间"];
+		var _colmodel = [{name:"userName", index:"create_id", width:100},
+						{name:"typeName", index:"type", width:100},
+						{name:"statusName", index:"status", width:100},
+						{name:"mark", index:"mark", width:100},
+						{name:"audit_desc", index:"audit_desc", width:100},
+						{name:"create_time", index:"create_time", width:100}];
+		
+		jQuery(grid_selector).jqGrid({
+			url : grid_url,
+		    shrinkToFit : true,
+			colNames : _colnames,
+			colModel : _colmodel, 
+			jsonReader : {id :"id"},
+			pager : pager_selector,
+			postData : {sort : "id", order : "desc", where : condition}
+		});
+	}
+</script>
+
+
+	<!-- 配置 grid -->
+	<div class="row">
+		<div class="col-xs-12 tb-grid">
+			<!-- 配置 查询 -->
+			@ var _col=[
+			@		{name:"电工", index:"create_id", type:"text"},
+			@		{name:"申请类型", index:"select_201", type:"text"},
+			@		{name:"状态", index:"select_202", type:"text"}						
+			@];
+			@ include("/common/_function/_search.html",{"col":_col}){}
+			<!-- 按钮 -->
+			<div class="welljq well-sm" id="btns"></div>
+			<!-- grid -->
+			<table id="grid-table"></table>
+			<!-- 分页-->
+			<div id="grid-pager"></div>
+		</div>
+	</div>
+	
+	<!-- 引入所需的js -->
+	@include("/common/_listscript.html"){}
+	
+@}	

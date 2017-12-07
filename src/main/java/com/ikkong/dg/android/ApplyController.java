@@ -3,23 +3,28 @@ package com.ikkong.dg.android;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.ikkong.common.constant.CommonConts;
+import com.ikkong.common.constant.CommonConts.AgingTypeCode;
 import com.ikkong.common.constant.CommonConts.ApplyStatus;
 import com.ikkong.common.constant.CommonConts.ApplyType;
 import com.ikkong.common.constant.CommonConts.ItemStatus;
-import com.ikkong.common.constant.CommonConts.MsgStatus;
+import com.ikkong.common.constant.CommonConts.MsgTempCode;
 import com.ikkong.common.constant.CommonConts.MsgType;
 import com.ikkong.common.constant.CommonConts.UserStatus;
+import com.ikkong.common.constant.SmsTempConts;
+import com.ikkong.common.utils.SmsSender;
 import com.ikkong.core.base.BaseController;
+import com.ikkong.core.constant.ConstCache;
 import com.ikkong.core.dao.Blade;
 import com.ikkong.core.dao.Db;
+import com.ikkong.core.shiro.DgUserToken;
 import com.ikkong.core.toolbox.Record;
 import com.ikkong.core.toolbox.support.BladePage;
+import com.ikkong.dg.meta.blade.BladeUtils;
 import com.ikkong.dg.model.DgUser;
 import com.ikkong.dg.model.ItemsReject;
-import com.ikkong.dg.model.Messages;
 import com.ikkong.dg.model.OrderApply;
 import com.ikkong.dg.model.UserWorktype;
 import com.ikkong.dg.model.WorkOrder;
@@ -35,6 +40,9 @@ import com.ikkong.dg.service.impl.MessagesServiceImpl;
 import com.ikkong.dg.service.impl.OrderApplyServiceImpl;
 import com.ikkong.dg.service.impl.UserWorktypeServiceImpl;
 import com.ikkong.dg.service.impl.WorkOrderServiceImpl;
+import com.ikkong.system.model.Parameter;
+import com.jfinal.plugin.ehcache.CacheKit;
+import com.jfinal.plugin.ehcache.IDataLoader;
 
 /**
  * 申请API
@@ -43,8 +51,6 @@ import com.ikkong.dg.service.impl.WorkOrderServiceImpl;
  *
  */
 public class ApplyController extends BaseController {
-
-	private static int pageSize = CommonConts.CLIENT_PAGE_SIZE;
 
 	private static final String SQL_LIST = "OrderApply.findList";
 
@@ -61,8 +67,8 @@ public class ApplyController extends BaseController {
 	private MessagesService msgServ = new MessagesServiceImpl();
 
 	public void add() {// 电工对项目子单的申请
-		Long dgUserId = dgUserToken().getUserId();
-		DgUser dgUser = userServ.findById(dgUserId);
+		Long curUserId = dgUserToken().getUserId();
+		DgUser dgUser = userServ.findById(curUserId);
 		if (UserStatus.NORMAL.getStatusVal() != dgUser.getStatus()) {
 			renderJson(warn("您当前账户状态不能申请！"));
 			return;
@@ -99,7 +105,7 @@ public class ApplyController extends BaseController {
 
 			// 查询电工用户工种表，当前电工，当前申请工种，状态为审核通过记录
 			String whereSql = " where status = 3 and dg_userid = #{dgUserId} and worktype_id = #{workTypeId}";
-			Record param = Record.create().set("dgUserId", dgUserId).set("workTypeId", item.getWorktype_id());
+			Record param = Record.create().set("dgUserId", curUserId).set("workTypeId", item.getWorktype_id());
 			UserWorktype userWorktype = userWorktypeServ.findFirstBy(whereSql, param);// 电工工种
 			if (userWorktype == null) {
 				renderJson(warn("您还没有认证该工种!"));
@@ -114,23 +120,27 @@ public class ApplyController extends BaseController {
 			}
 
 			String rejectSql = " where work_order_id = #{workOrderId} and dg_userid = #{dgUId}";
-			Record rejectParam = Record.create().set("workOrderId", workOrderId).set("dgUId", dgUserId);
+			Record rejectParam = Record.create().set("workOrderId", workOrderId).set("dgUId", curUserId);
 			ItemsReject reject = itemReServ.findFirstBy(rejectSql, rejectParam);
 			if (reject != null) {
 				renderJson(warn("抱歉，雇主已拒绝过您的申请，无法再次申请！"));// 在申请类型为1，状态为0或1时才提示
 				return;
 			}
 
+			// 查询当前用(户申请中/同意)的和已经在(完成,终止,撤销)状态的项目，该项目不与当前申请项目在同一个头项目中
+			//modify by xqliu
 			StringBuffer existBuf = new StringBuffer();
 			existBuf.append("select 1 from dg_order_apply a, dg_work_order b ");
 			existBuf.append(" where a.work_order_id = b.id ");
 			existBuf.append(" and a.type=1 and a.status in (0,1) ");
-			existBuf.append(" and b.order_id not in (#{orderId}) ");
+			existBuf.append(" and b.status not in (#{status}) and b.order_id not in (#{orderId}) ");
 			existBuf.append(" and a.create_id = #{applyUId} ");
-			Record existPara = Record.create().set("orderId", item.getOrder_id()).set("applyUId", dgUserId);
+			// (完成,终止,撤销)
+			String statusWhere = ItemStatus.FINISHED.getStatusVal() + "," + ItemStatus.TERMINATE.getStatusVal() + "," + ItemStatus.REVOCATION.getStatusVal();
+			Record existPara = Record.create().set("orderId", item.getOrder_id()).set("applyUId", curUserId).set("status", statusWhere);
 			boolean hasRecord = Db.init().isExist(existBuf.toString(), existPara);
 			if (hasRecord) {
-				renderJson(warn("不能同时申请两个项目下的工种单！"));
+				renderJson(warn("申请失败！您已经有一个该项目下的订单在进行。"));
 				return;
 			}
 		}
@@ -138,7 +148,7 @@ public class ApplyController extends BaseController {
 		String mark = getPara("mark");
 
 		OrderApply apply = new OrderApply();
-		apply.setCreate_id(dgUserId);
+		apply.setCreate_id(curUserId);
 		apply.setType(type);
 		apply.setStatus(status);
 		apply.setWork_order_id(workOrderId);
@@ -149,7 +159,7 @@ public class ApplyController extends BaseController {
 		try {
 			if (service.save(apply)) {
 				// 发送系统提示消息到发单用户手机端提示
-				saveMsg(dgUserId);
+				addTipMsg(apply, curUserId, item);
 				renderJson(success("申请记录添加成功!"));
 			} else {
 				renderJson(fail("申请记录新增失败!"));
@@ -167,14 +177,130 @@ public class ApplyController extends BaseController {
 		return service.isExist(countSql, record);
 	}
 
-	private void saveMsg(Long dgUserId) {
-		Messages msg = new Messages();
-		msg.setVersion(1);
-		msg.setDg_id(dgUserId);
-		msg.setCreate_time(new Date());
-		msg.setStatus(MsgStatus.UNREAD.getStatusVal());
-		msg.setType(MsgType.USER_MSG.getStatusVal());
-		msgServ.save(msg);
+	/**
+	 * 发包方申请消息
+	 * 
+	 * @param apply
+	 * @param itemCreator
+	 */
+	private void addTipMsg(OrderApply apply, Long curUserId, WorkOrder item) {
+		String tmpCodeVal = null;
+		Integer type = apply.getType();
+		Integer status = apply.getStatus();
+		Long receiverId = null;
+		String smsTemplate = null;
+		String receivePhones = null;
+		if (status == ApplyStatus.APPLYING.getStatusVal()) {
+			smsTemplate = SmsTempConts.ITEM_CREATOR_EVENT_TMP;
+			if (type == ApplyType.APPLY.getTypeVal()) {// 1招标申请
+				tmpCodeVal = MsgTempCode.TMP_1016.getTmpVal(); // creator
+			}
+
+			if (curUserId == item.getAccept_user_id()) {// 当前为接单方用户时
+				receiverId = item.getCreate_id();// 发包方收消息
+				if (type == ApplyType.ABORT.getTypeVal()) {// 2终止申请
+					tmpCodeVal = MsgTempCode.TMP_1017.getTmpVal(); // creator
+				} else if (type == ApplyType.FINISH.getTypeVal()) {// 4完成申请
+					tmpCodeVal = MsgTempCode.TMP_1018.getTmpVal();
+				} else if (type == ApplyType.OVERTIME.getTypeVal()) {// 3加班申请
+					tmpCodeVal = MsgTempCode.TMP_1022.getTmpVal();
+				}
+
+				receivePhones = userServ.findById(receiverId).getPhoneno();
+			} else if (curUserId == item.getCreate_id()) {// 当前为发单方用户时
+				if (type == ApplyType.ABORT.getTypeVal()) {// 2终止申请
+					receiverId = item.getAccept_user_id();// 接包方收消息
+					tmpCodeVal = MsgTempCode.TMP_1025.getTmpVal(); // creator
+					smsTemplate = SmsTempConts.ACCEPTOR_ABORT_APPLY_TMP;
+					receivePhones = userServ.findById(receiverId).getPhoneno();
+				}
+			}
+		}
+
+		SmsSender.sendTipSms(smsTemplate, receivePhones);// 发送短信
+		msgServ.addMsgByTemplate(receiverId, MsgType.SCHEDULE_MSG.getStatusVal(), tmpCodeVal);
+	}
+
+	/**
+	 * 收包方接收消息
+	 * 
+	 * @param createId
+	 * @param status
+	 * @param type
+	 */
+	private void sendMsg(Long createId, Long acceptId, Integer status, Integer type) {
+//		②1007	②终止申请时，发包方拒绝接包方  type 2  status 2  token=creator  receive = acceptor
+//		③1008	③终止申请时，接包方拒绝发包方  type 2  status 2  token=acceptor receive = creator
+		String tempVal = null;
+		String smsTemplate = null;
+		String phoneNos = null;
+		DgUserToken curUser = dgUserToken();
+		Long curUserId = curUser.getUserId();
+		Long receiverId = createId;
+		if (status == ApplyStatus.AGREE.getStatusVal()) {
+			if (type == ApplyType.APPLY.getTypeVal()) {// 招标申请通过审核
+				// 短信
+				smsTemplate = SmsTempConts.ACCEPT_APPLY_AUDIT_TMP;
+				phoneNos = userServ.findById(acceptId).getPhoneno();
+
+				// 消息
+				tempVal = MsgTempCode.TMP_1023.getTmpVal();
+				receiverId = acceptId;
+			} else if (type == ApplyType.OVERTIME.getTypeVal()) {// 加班通过
+				tempVal = MsgTempCode.TMP_1030.getTmpVal();
+				receiverId = acceptId;
+			}
+		} else if (status == ApplyStatus.REFUSED.getStatusVal()) {// 拒绝申请
+			if (type == ApplyType.APPLY.getTypeVal()) {// 招标申请审核不通过
+				DgUser user = Blade.create(DgUser.class).findById(createId);
+				Integer rejects = user.getPublish_rejects();// 发单拒绝次数
+				String code = AgingTypeCode.AGE_205.getCodeVal();
+				Parameter parameter = CacheKit.get(ConstCache.DEFAULT_CACHE, "getParamter_" + code, new IDataLoader() {
+					@Override
+					public Object load() {
+						return Blade.create(Parameter.class).findFirstBy("CODE=#{code}", Record.create().set("code", code));
+					}
+				});
+				if (rejects > Integer.valueOf(parameter.getPara())) {
+					// ②1002 ②发包方拒绝招标申请超过配置次数
+					tempVal = MsgTempCode.TMP_1002.getTmpVal();
+				} else {
+					tempVal = MsgTempCode.TMP_1024.getTmpVal();// 招标申请审核不通过
+					receiverId = acceptId;
+				}
+
+				// 短信
+				smsTemplate = SmsTempConts.ACCEPTOR_APPLY_UNAUDIT_TMP;
+				phoneNos = userServ.findById(acceptId).getPhoneno();
+			} else if (type == ApplyType.OVERTIME.getTypeVal()) {// 拒绝加班申请
+				tempVal = MsgTempCode.TMP_1031.getTmpVal();
+				receiverId = acceptId;
+			} else if (type == ApplyType.ABORT.getTypeVal()) {// 拒绝项目终止申请
+				if (curUserId.longValue() == createId.longValue()) {
+					tempVal = MsgTempCode.TMP_1007.getTmpVal();// 发单方拒绝接单方
+					receiverId = acceptId;
+				} else if (curUserId.longValue() == acceptId.longValue()) {
+					tempVal = MsgTempCode.TMP_1008.getTmpVal();// 接单方拒绝发单方
+				}
+
+				List<String> phoneList = userServ.findPhonesByList(new Long[] { createId, acceptId });
+				phoneNos = StringUtils.join(phoneList, ",");// 接收短信的手机号
+
+				smsTemplate = SmsTempConts.ACCEPTOR_ABORT_APPLY_TMP;
+				msgServ.addSysMsgByTemp(curUserId, MsgTempCode.TMP_1033.getTmpVal(), curUser.getUsername());
+			} else if (type == ApplyType.FINISH.getTypeVal()) {// 发包方拒绝项目完成申请
+				tempVal = null;
+				msgServ.addSysMsgByTemp(curUserId, MsgTempCode.TMP_1034.getTmpVal(), curUser.getUsername());
+			}
+		}
+
+		if (smsTemplate != null) {
+			SmsSender.sendTipSms(smsTemplate, phoneNos);
+		}
+
+		if (tempVal != null) {
+			msgServ.addMsgByTemplate(receiverId, MsgType.EVENT_MSG.getStatusVal(), tempVal);
+		}
 	}
 
 	public void modifyStatus() {
@@ -182,12 +308,12 @@ public class ApplyController extends BaseController {
 		Long id = getParaToLong("id");
 		String auditDesc = getPara("audit_desc");
 		Integer type = getParaToInt("type");// 新增申请类型参数
-		
+
 		if (status == null || status < 0 || id == null || id < 1 || type == null || type < 0) {
 			renderJson(warn("参数传入不正确,请确保参数合乎逻辑!"));
 			return;
 		}
-		
+
 		if (StringUtils.isBlank(auditDesc)) {
 			renderJson(warn("描述信息不能为空！"));
 			return;
@@ -203,55 +329,75 @@ public class ApplyController extends BaseController {
 		apply.setStatus(status);
 		apply.setAudit_desc(auditDesc);
 		apply.setType(type);
+
 		try {
+
 			if (service.update(apply)) {
+				WorkOrder wo = workOrderServ.findById(apply.getWork_order_id());
+
+				// 注意：先修改记录，成功后才更新状态
+				if (type == ApplyType.APPLY.getTypeVal()) {// 如果当前申请类型是招标申请
+					if (status == ApplyStatus.REFUSED.getStatusVal()) {// 子项目记录拒绝次数
+						if (wo.getReject_times() == null) {
+							wo.setReject_times(1);
+						} else {
+							wo.setReject_times(wo.getReject_times() + 1);
+						}
+						// 不应该在招标操作里面挂起，应该在终止操作里面修改
+						// wo.setStatus(ItemStatus.HUNG_UP.getStatusVal());
+						wo.setVersion(wo.getVersion() + 1);
+						workOrderServ.update(wo);
+
+						Integer paraVal = BladeUtils.getParaValByCode(AgingTypeCode.AGE_206.getCodeVal());
+						if (paraVal > wo.getReject_times()) {// 终止项目申请次数达到配置次数，您的帐号已冻结
+							Long dgUserId = dgUserId();
+							// 添加冻结消息
+							msgServ.addMsgByTemplate(dgUserId, MsgType.EVENT_MSG.getStatusVal(), MsgTempCode.TMP_1003.getTmpVal());
+							DgUser freezeUser = userServ.findById(dgUserId);
+							freezeUser.setStatus(UserStatus.FREEZE.getStatusVal());
+							freezeUser.setVersion(freezeUser.getVersion() + 1);
+							userServ.update(freezeUser);
+						}
+
+						// 添加招标申请拒绝记录
+						ItemsReject itemRt = new ItemsReject();
+						itemRt.setVersion(1);
+						itemRt.setCreate_time(new Date());
+						itemRt.setDg_userid(apply.getCreate_id());
+						itemRt.setWork_order_id(apply.getWork_order_id());
+						itemReServ.save(itemRt);
+					} else if (status == ApplyStatus.AGREE.getStatusVal()) {
+						wo.setAccept_user_id(apply.getCreate_id());
+						wo.setAccpet_time(new Date());
+						wo.setVersion(wo.getVersion() + 1);
+
+						// 项目改成已招标
+						wo.setStatus(ItemStatus.OVER_BIDED.getStatusVal());
+						wo.setOverbid_time(new Date());// 已招标时间设置
+						workOrderServ.update(wo);
+					}
+				} else if (type == ApplyType.ABORT.getTypeVal()) {// 如果当前申请类型是终止申请
+					if (status == ApplyStatus.REFUSED.getStatusVal()) {// 拒绝
+//						WorkOrder wo = workOrderServ.findById(apply.getWork_order_id());
+						wo.setStatus(ItemStatus.HUNG_UP.getStatusVal());// 挂起
+						wo.setVersion(wo.getVersion() + 1);
+						workOrderServ.update(wo);
+					} else if (status == ApplyStatus.AGREE.getStatusVal()) {
+						wo.setVersion(wo.getVersion() + 1);
+						wo.setStatus(ItemStatus.TERMINATE.getStatusVal());
+						workOrderServ.update(wo);
+					}
+				} else if (type == ApplyType.OVERTIME.getTypeVal()) {// 如果当前申请类型是加班申请
+					// 修改加班信息流程
+				} else if (type == ApplyType.FINISH.getTypeVal()) {// 如果当前申请类型是完成申请
+					// 走结算流程
+				}
+
+				sendMsg(apply.getCreate_id(), wo.getAccept_user_id(), status, type);// 申请状态变更消息发送
 				renderJson(success("申请状态变更成功!"));
 			} else {
 				renderJson(fail("申请状态变更失败!"));
 				return;
-			}
-			// 注意：先修改记录，成功后才更新状态
-			if (type == ApplyType.APPLY.getTypeVal()) {// 如果当前申请类型是招标申请
-				WorkOrder wo = workOrderServ.findById(apply.getWork_order_id());
-				if (status == ApplyStatus.REFUSED.getStatusVal()) {// 子项目记录拒绝次数
-					if (wo.getReject_times() == null) {
-						wo.setReject_times(1);
-					} else {
-						wo.setReject_times(wo.getReject_times() + 1);
-					}
-					// 不应该在招标操作里面挂起，应该在终止操作里面修改
-					// wo.setStatus(ItemStatus.HUNG_UP.getStatusVal());
-					wo.setVersion(wo.getVersion() + 1);
-					workOrderServ.update(wo);
-
-					// 添加招标申请拒绝记录
-					ItemsReject itemRt = new ItemsReject();
-					itemRt.setVersion(1);
-					itemRt.setCreate_time(new Date());
-					itemRt.setDg_userid(apply.getCreate_id());
-					itemRt.setWork_order_id(apply.getWork_order_id());
-					itemReServ.save(itemRt);
-				} else if (status == ApplyStatus.AGREE.getStatusVal()) {
-					wo.setAccept_user_id(apply.getCreate_id());
-					wo.setAccpet_time(new Date());
-					wo.setVersion(wo.getVersion() + 1);
-
-					// 项目改成已招标
-					wo.setStatus(ItemStatus.TERMINATE.getStatusVal());
-					wo.setOverbid_time(new Date());// 已招标时间设置
-					workOrderServ.update(wo);
-				}
-			} else if (type == ApplyType.ABORT.getTypeVal()) {// 如果当前申请类型是终止申请
-				if (status == ApplyStatus.REFUSED.getStatusVal()) {// 拒绝
-					WorkOrder wo = workOrderServ.findById(apply.getWork_order_id());
-					wo.setStatus(ItemStatus.HUNG_UP.getStatusVal());// 挂起
-					wo.setVersion(wo.getVersion() + 1);
-					workOrderServ.update(wo);
-				}
-			} else if (type == ApplyType.OVERTIME.getTypeVal()) {// 如果当前申请类型是加班申请
-				// 修改加班信息流程
-			} else if (type == ApplyType.FINISH.getTypeVal()) {// 如果当前申请类型是完成申请
-				// 走结算流程
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -260,7 +406,6 @@ public class ApplyController extends BaseController {
 	}
 
 	public void query() {// 申请查询
-		Integer page = getParaToInt("page");
 		Integer status = getParaToInt("status");
 		Integer type = getParaToInt("type");
 		Long workOrderId = getParaToLong("workOrderId");
@@ -268,15 +413,10 @@ public class ApplyController extends BaseController {
 		String createEnd = getPara("createEnd");
 		Long createId = getParaToLong("create_id");
 
-		if (page == null) {
-			page = 1;
-		}
-
-		int start = (page - 1) * pageSize + 1;// 分页起始位置
 		String sql = Blade.dao().getScript(SQL_LIST).getSql();
 		Record paraMap = Record.create();//
 		StringBuffer sqlBuf = new StringBuffer(sql);
-		sqlBuf.append(" where 1=1 ");// @Modify 先不管我的申请
+		sqlBuf.append(" where 1=1 ");
 
 		if (createId != null && createId > 0) {
 			Long dgUserId = dgUserToken().getUserId();
@@ -315,7 +455,7 @@ public class ApplyController extends BaseController {
 		}
 
 		sqlBuf.append(" order by a.create_time desc");
-		BladePage<Object> resultPage = Db.init().paginate(sqlBuf.toString(), paraMap, start, pageSize);
+		BladePage<Object> resultPage = Db.init().paginate(sqlBuf.toString(), paraMap, pageNo("page"), pageSize);
 		if (resultPage != null && !resultPage.getRows().isEmpty()) {
 			renderJson(success("查询到结果！").setData(resultPage));
 		} else {

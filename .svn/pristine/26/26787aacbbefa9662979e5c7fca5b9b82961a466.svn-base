@@ -1,0 +1,62 @@
+package com.ikkong.dg.android;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.aliyuncs.exceptions.ClientException;
+import com.ikkong.common.constant.CommonConts;
+import com.ikkong.common.utils.SmsSender;
+import com.ikkong.core.base.BaseController;
+import com.ikkong.core.constant.ConstCache;
+import com.ikkong.core.jfinal.ext.shiro.ShiroKit;
+import com.ikkong.core.sms.model.SendSmsResponse;
+import com.jfinal.plugin.ehcache.CacheKit;
+
+/**
+ * 短信发送请求
+ * 
+ * @author sparker
+ *
+ */
+public class SmsController extends BaseController {
+
+	public void pushSms() {
+		String phoneNo = getPara("phoneNo");//手机号码
+		Long timeMillis = getParaToLong("millis");//时间毫秒值
+		String digest = getPara("digest");//加密串
+		if(StringUtils.isBlank(phoneNo)) {
+			renderJson(warn("手机号不能为空!"));
+			return;
+		}
+		if(timeMillis == null || timeMillis < 1) {
+			renderJson(warn("时间值不能为空!"));
+			return;
+		}
+		if(!phoneNo.matches(CommonConts.PhoneRegex)) {
+			renderJson(warn("手机号码无效,请检查!"));
+			return;
+		}
+		if(StringUtils.isBlank(digest)) {
+			renderJson(warn("匹配码不能为空！"));
+			return;
+		}
+		String mineDegist = SmsSender.digestCode(phoneNo, timeMillis);
+		if(!digest.equals(mineDegist)) {
+			renderJson(warn("匹配串不一致，请求失败！"));
+			return;
+		}
+		
+		try {
+			String sessionId = ShiroKit.getSession().getId().toString();
+			String vcode = SmsSender.genVCode();			
+			SendSmsResponse smsRes = SmsSender.findPwdSms(phoneNo, vcode, sessionId);
+			String resCode = smsRes.getRequestId();
+			CacheKit.put(ConstCache.SMS_CACHE, resCode, vcode);
+			System.out.println(resCode);
+			renderJson(success("短信发送成功").setData(resCode));
+		} catch (ClientException e) {
+			e.printStackTrace();
+			renderJson(error("短信请求失败，服务端异常！"));
+		}
+		return;
+	}
+}

@@ -1,0 +1,119 @@
+package com.ikkong.dg.android;
+
+import java.util.Date;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.ikkong.common.constant.CommonConts.MsgStatus;
+import com.ikkong.common.constant.CommonConts.MsgType;
+import com.ikkong.core.base.BaseController;
+import com.ikkong.core.dao.Blade;
+import com.ikkong.core.dao.Db;
+import com.ikkong.core.toolbox.Record;
+import com.ikkong.core.toolbox.support.BladePage;
+import com.ikkong.dg.model.Messages;
+import com.ikkong.dg.service.MessagesService;
+import com.ikkong.dg.service.impl.MessagesServiceImpl;
+
+/**
+ * 客户端消息类
+ * @author skybiran
+ *
+ */
+public class MessageController extends BaseController{
+
+	private static String SQL_LIST = "Messages.findPage";
+	private MessagesService msgServ = new MessagesServiceImpl();
+	
+	public void add() {
+		Integer type = getParaToInt("type");
+		String content = getPara("content");
+		Long dgId = getParaToLong("dgId");
+		
+		if(type == null || type < 0) {
+			renderJson(warn("消息类型无效！"));
+			return ;
+		}
+		
+		if(StringUtils.isBlank(content)) {
+			renderJson(warn("消息内容不能为空！"));
+			return;
+		}
+		
+		if(dgId == null || dgId < 1) {
+			renderJson(warn("电工用户Id无效！"));
+			return;
+		}
+		
+		try {
+			boolean isOk = msgServ.addMessage(dgId, content, type);
+			if(isOk) {
+				renderJson(success("添加消息成功！"));
+			} else {
+				renderJson(fail("添加消息失败！"));
+			}
+			return;
+		} catch (Exception e) {
+			e.printStackTrace();
+			renderJson(error("添加消息异常，服务端报错！"));
+			return;
+		}
+	}
+	
+	public void read() {		
+		Long msgId = getParaToLong("msgId");
+		if(msgId == null || msgId < 1) {
+			renderJson(warn("消息Id不正确，无效的请求！"));
+			return;
+		}
+		Messages msg = msgServ.findById(msgId);
+		if(msg == null) {
+			renderJson(warn("不存在该ID所在的消息！"));
+			return;
+		}
+		msg.setRead_time(new Date());
+		msg.setVersion(msg.getVersion()+1);
+		msg.setStatus(MsgStatus.READED.getStatusVal());
+		try {
+			if(msgServ.update(msg)) {
+				renderJson(success("消息已阅！"));
+			} else {
+				renderJson(fail("消息更新失败！"));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			renderJson(error("消息更新处理异常！"));
+		}
+	}
+	
+	public void query() {
+		Integer type = getParaToInt("type");
+		Long dgId = getParaToLong("dgId");
+		
+		if(type == null || type < 0) {
+			renderJson(warn("消息类型为必传参数！"));
+			return ;
+		}
+
+		Long userId = dgUserToken().getUserId();
+		String sql = Blade.dao().getScript(SQL_LIST).getSql();
+		Record paraMap = Record.create();//
+		paraMap.put("status", MsgStatus.UNREAD.getStatusVal());
+		paraMap.put("type", type);
+		StringBuffer sqlBuf = new StringBuffer(sql);
+		sqlBuf.append(" where a.status = #{status} and a.type = #{type} ");
+		if(MsgType.SYS_MSG.getStatusVal() != type && dgId != null && dgId > 0) {
+			paraMap.put("dgUserId", userId);
+			sqlBuf.append(" and a.dg_id = #{dgUserId} ");
+		}		
+		sqlBuf.append(" order by a.create_time desc");
+		
+		BladePage<Object> resultPage = Db.init().paginate(sqlBuf.toString(), paraMap, pageNo("page"), pageSize);
+		if (resultPage != null && !resultPage.getRows().isEmpty()) {
+			renderJson(success("查询到结果！").setData(resultPage));
+		} else {
+			renderJson(warn("未查询到消息记录!"));
+		}
+		
+	}
+}
